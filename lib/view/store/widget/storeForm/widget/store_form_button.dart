@@ -21,7 +21,10 @@ class StoreFormButton extends StatelessWidget {
   final bool editorsChoice;
   final String language;
 
-  const StoreFormButton({
+  // ✅ Using ValueNotifier to track submitting state
+  final ValueNotifier<bool> isSubmitting = ValueNotifier(false);
+
+  StoreFormButton({
     super.key,
     required this.formKey,
     required this.nameController,
@@ -40,66 +43,114 @@ class StoreFormButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<StoreViewModel>(
-      builder: (context, storeViewModel, child) {
-        return storeViewModel.isSubmitting
+    return ValueListenableBuilder<bool>(
+      valueListenable: isSubmitting,
+      builder: (context, submitting, child) {
+        return submitting
             ? const CircularProgressIndicator()
             : ElevatedButton(
                 onPressed: () async {
-                  if (formKey.currentState!.validate()) {
-                    final imagePickerViewModel =
-                        Provider.of<ImagePickerViewModel>(context,
-                            listen: false);
-
-                    String? uploadedImageUrl;
-                    try {
-                      if (imagePickerViewModel.selectedImageBytes != null) {
-                        uploadedImageUrl =
-                            await imagePickerViewModel.uploadImageToS3();
-                      }
-                    } catch (e) {
-                      Utils.toastMessage('Error uploading image: $e');
-                      return;
-                    }
-
-                    final store = Data(
-                      id: '',
-                      name: nameController.text.trim(),
-                      website: directUrlController.text.trim(),
-                      image: StoreImage(
-                        url: uploadedImageUrl ?? '',
-                        alt: imagePickerViewModel.selectedImageAlt?.trim() ??
-                            'Default Alt Text',
-                      ),
-                      seo: Seo(
-                        metaTitle: metaTitleController.text.trim(),
-                        metaDescription: metaDescriptionController.text.trim(),
-                        metaKeywords: metaKeywordsController.text.trim(),
-                      ),
-                      categories:
-                          selectedCategory != null ? [selectedCategory!] : [],
-                      language: language,
-                      createdAt: DateTime.now(),
-                      updatedAt: DateTime.now(),
-                      v: 0,
-                      shortDescription: shortDescriptionController.text.trim(),
-                      longDescription: longDescriptionController.text.trim(),
-                      slug: nameController.text.trim(),
-                    );
-
-                    print('Creating store with data: ${store.toJson()}');
-
-                    try {
-                      await Provider.of<StoreViewModel>(context, listen: false)
-                          .createStore(store);
-                    } catch (e) {
-                      Utils.toastMessage('Error creating store: $e');
-                    }
-                  }
+                  await _submitStore(context);
                 },
                 child: const Text('Create Store'),
               );
       },
     );
+  }
+
+  Future<void> _submitStore(BuildContext context) async {
+    if (!formKey.currentState!.validate()) {
+      Utils.toastMessage('Please fill in all required fields.');
+      return;
+    }
+
+    isSubmitting.value = true; // Start loading state
+
+    final imagePickerViewModel =
+        Provider.of<ImagePickerViewModel>(context, listen: false);
+
+    String? uploadedImageUrl;
+    try {
+      if (imagePickerViewModel.selectedImageBytes != null) {
+        uploadedImageUrl = await imagePickerViewModel.uploadImageToS3();
+      }
+    } catch (e) {
+      debugPrint('Error uploading image: $e');
+      Utils.toastMessage('Error uploading image. Please try again.');
+      isSubmitting.value = false;
+      return;
+    }
+
+    if (!_validateFields(uploadedImageUrl)) {
+      Utils.toastMessage('Please fill in all required fields correctly.');
+      isSubmitting.value = false;
+      return;
+    }
+
+    final store = Data(
+      id: '',
+      name: nameController.text.trim(),
+      directUrl: directUrlController.text.trim(),
+      trackingUrl: trackingUrlController.text.trim(),
+      image: StoreImage(
+        url: uploadedImageUrl ?? '',
+        alt:
+            imagePickerViewModel.selectedImageAlt?.trim() ?? 'Default Alt Text',
+      ),
+      seo: Seo(
+        metaTitle: metaTitleController.text.trim(),
+        metaDescription: metaDescriptionController.text.trim(),
+        metaKeywords: metaKeywordsController.text.trim(),
+      ),
+      categories: selectedCategory != null ? [selectedCategory!] : [],
+      language: language,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      v: 0,
+      shortDescription: shortDescriptionController.text.trim(),
+      longDescription: longDescriptionController.text.trim(),
+      slug: nameController.text.trim(),
+    );
+
+    try {
+      await Provider.of<StoreViewModel>(context, listen: false)
+          .createStore(store);
+      Utils.toastMessage('Store created successfully!');
+      // ✅ Clear TextFields After Successful Submission
+      _clearFormFields();
+
+      // ✅ Also Clear Selected Image in Image Picker
+      imagePickerViewModel.clearImage();
+    } catch (e) {
+      debugPrint('Error creating store: $e');
+      Utils.toastMessage('Error creating store. Please try again.');
+    } finally {
+      isSubmitting.value = false; // Stop loading state
+    }
+  }
+
+  /// ✅ Clears all form input fields after successful submission
+  void _clearFormFields() {
+    nameController.clear();
+    directUrlController.clear();
+    trackingUrlController.clear();
+    metaTitleController.clear();
+    metaDescriptionController.clear();
+    metaKeywordsController.clear();
+    shortDescriptionController.clear();
+    longDescriptionController.clear();
+  }
+
+  /// ✅ SOLID Principle: Separate Concerns - Validation Logic in Its Own Method
+  bool _validateFields(String? uploadedImageUrl) {
+    if (nameController.text.trim().isEmpty) return false;
+    if (directUrlController.text.trim().isEmpty ||
+        !Uri.parse(directUrlController.text.trim()).isAbsolute) return false;
+    if (trackingUrlController.text.trim().isEmpty ||
+        !Uri.parse(trackingUrlController.text.trim()).isAbsolute) return false;
+    if (shortDescriptionController.text.trim().isEmpty) return false;
+    if (longDescriptionController.text.trim().isEmpty) return false;
+    if (uploadedImageUrl == null || uploadedImageUrl.isEmpty) return false;
+    return true;
   }
 }

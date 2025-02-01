@@ -12,7 +12,9 @@ class UpdateStoreDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final nameController = TextEditingController(text: store.name);
-    final websiteController = TextEditingController(text: store.website);
+    final directUrlController = TextEditingController(text: store.directUrl);
+    final trackingUrlController =
+        TextEditingController(text: store.trackingUrl);
     final descriptionController =
         TextEditingController(text: store.shortDescription);
 
@@ -35,11 +37,21 @@ class UpdateStoreDialog extends StatelessWidget {
                   },
                 ),
                 CustomTextFormField(
-                  controller: websiteController,
-                  labelText: 'Website',
+                  controller: directUrlController,
+                  labelText: 'Direct URL',
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter a website';
+                      return 'Please enter a direct URL';
+                    }
+                    return null;
+                  },
+                ),
+                CustomTextFormField(
+                  controller: trackingUrlController,
+                  labelText: 'Tracking URL',
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a tracking URL';
                     }
                     return null;
                   },
@@ -87,20 +99,7 @@ class UpdateStoreDialog extends StatelessWidget {
         TextButton(
           child: const Text('Update'),
           onPressed: () {
-            // final updatedStore = Data(
-            //   id: store.id,
-            //   name: nameController.text,
-            //   website: websiteController.text,
-            //   description: descriptionController.text,
-            //   image: Provider.of<ImagePickerViewModel>(context, listen: false)
-            //           .imageName ??
-            //       store.image, // Use picked image or existing one
-            //   coupons: store.coupons, categories: [], v: 0,
-            // );
-
-            // Provider.of<StoreViewModel>(context, listen: false)
-            //     .updateStore(updatedStore);
-            // Navigator.pop(context);
+            // Implement the update logic here
           },
         ),
       ],

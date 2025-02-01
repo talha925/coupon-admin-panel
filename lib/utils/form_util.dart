@@ -11,7 +11,7 @@ class FormUtils {
   }
 
   static String? validateWebsite(String? value) {
-    final urlPattern =
+    const urlPattern =
         r'^(https?:\/\/)?(www\.)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$';
     final regex = RegExp(urlPattern);
 

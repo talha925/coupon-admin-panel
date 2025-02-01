@@ -40,7 +40,7 @@ class CustomTextFormField extends StatelessWidget {
             color: Colors.grey.withOpacity(0.1),
             spreadRadius: 2,
             blurRadius: 5,
-            offset: Offset(0, 2), // Shadow position
+            offset: const Offset(0, 2), // Shadow position
           ),
         ],
       ),

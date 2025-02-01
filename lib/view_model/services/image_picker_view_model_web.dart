@@ -63,8 +63,9 @@ class ImagePickerViewModel extends ChangeNotifier {
       if (_selectedImageBytes == null || _selectedImageName == null) {
         throw Exception('No image selected');
       }
+      final uri = Uri.parse('https://coupon-app-backend.vercel.app/api/upload');
 
-      final uri = Uri.parse('http://localhost:5000/api/upload');
+      // final uri = Uri.parse('http://localhost:5000/api/upload');
       var request = http.MultipartRequest('POST', uri);
 
       request.files.add(

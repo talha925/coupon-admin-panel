@@ -1,8 +1,5 @@
-import 'dart:convert';
-import 'dart:typed_data';
-import 'package:flutter/material.dart';
 import 'package:coupon_admin_panel/model/store_model.dart';
-
+import 'package:flutter/material.dart';
 import 'delete_confirmation_dialog.dart';
 import 'update_store_dialog.dart';
 
@@ -19,7 +16,8 @@ class StoreListItem extends StatelessWidget {
             ? _buildImage(store.image.url)
             : const Icon(Icons.store),
         title: Text(store.name.isNotEmpty ? store.name : 'Unnamed Store'),
-        subtitle: Text(store.website.isNotEmpty ? store.website : 'No Website'),
+        subtitle: Text(
+            store.directUrl.isNotEmpty ? store.directUrl : 'No Direct URL'),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

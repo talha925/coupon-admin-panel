@@ -2,6 +2,7 @@ import 'package:coupon_admin_panel/data/response/api_response.dart';
 import 'package:coupon_admin_panel/model/category_model.dart';
 import 'package:coupon_admin_panel/repository/category_repository.dart';
 import 'package:coupon_admin_panel/utils/utils.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class CategoryViewModel with ChangeNotifier {
@@ -13,7 +14,9 @@ class CategoryViewModel with ChangeNotifier {
   // Fetch categories
   Future<void> fetchCategories() async {
     try {
-      print("Fetching categories...");
+      if (kDebugMode) {
+        print("Fetching categories...");
+      }
       _categoryResponse = ApiResponse.loading();
       notifyListeners();
 
@@ -22,13 +25,17 @@ class CategoryViewModel with ChangeNotifier {
           await _categoryRepository.fetchCategories();
 
       // Log the fetched data
-      print("Categories fetched successfully: ${categories.length}");
+      if (kDebugMode) {
+        print("Categories fetched successfully: ${categories.length}");
+      }
 
       // Update the state with fetched categories
       _categoryResponse = ApiResponse.completed(categories);
     } catch (error) {
       // Log the error
-      print("Error fetching categories: $error");
+      if (kDebugMode) {
+        print("Error fetching categories: $error");
+      }
 
       // Update the state with error
       _categoryResponse = ApiResponse.error(error.toString());
