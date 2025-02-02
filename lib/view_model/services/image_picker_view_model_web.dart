@@ -21,6 +21,12 @@ class ImagePickerViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// ✅ Auto-set Alt Text from Store Name
+  void setStoreNameForAltText(String storeName) {
+    _selectedImageAlt = storeName;
+    notifyListeners();
+  }
+
   /// Picks an image using the file picker.
   Future<void> pickImage() async {
     try {

@@ -12,6 +12,7 @@ class CustomTextFormField extends StatelessWidget {
   final TextInputType keyboardType;
   final bool readOnly; // To make the field read-only
   final Widget? suffixIcon; // For additional icons
+  final Function(String)? onChanged;
 
   const CustomTextFormField({
     super.key,
@@ -24,6 +25,7 @@ class CustomTextFormField extends StatelessWidget {
     this.keyboardType = TextInputType.text,
     this.readOnly = false,
     this.suffixIcon,
+    this.onChanged,
   });
 
   @override
@@ -61,6 +63,7 @@ class CustomTextFormField extends StatelessWidget {
         ),
         style: const TextStyle(fontSize: 14, color: Colors.black87),
         validator: validator,
+        onChanged: onChanged,
         onFieldSubmitted: (value) {
           // Shift focus to the next field
           if (focusNode != null && nextFocusNode != null) {

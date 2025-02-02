@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:coupon_admin_panel/utils/form_util.dart';
 import 'package:coupon_admin_panel/res/components/custom_textfild_component.dart';
 import 'package:coupon_admin_panel/res/components/image_picker_widget.dart';
+import 'package:provider/provider.dart';
+import 'package:coupon_admin_panel/view_model/services/image_picker_view_model_web.dart';
 import 'heading_dropdown_button.dart';
 import 'store_category_dropdown.dart';
 
@@ -56,6 +58,8 @@ class StoreFormFields extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final imagePickerViewModel = Provider.of<ImagePickerViewModel>(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -69,6 +73,10 @@ class StoreFormFields extends StatelessWidget {
             value,
             errorMessage: 'Please enter the store name',
           ),
+          onChanged: (value) {
+            // ✅ Automatically update image alt text with store name
+            imagePickerViewModel.selectedImageAlt = "$value Best Deals Logo";
+          },
         ),
         const SizedBox(height: 10),
 
@@ -78,9 +86,9 @@ class StoreFormFields extends StatelessWidget {
 
         // Store Category Dropdown
         StoreCategoryDropdown(
-            // selectedCategory: selectedCategory,
-            onChanged: onCategoryChanged,
-            selectedCategoryId: selectedCategory),
+          onChanged: onCategoryChanged,
+          selectedCategoryId: selectedCategory,
+        ),
         const SizedBox(height: 10),
 
         // Short Description Field

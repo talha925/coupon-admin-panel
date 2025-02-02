@@ -69,6 +69,9 @@ class StoreFormButton extends StatelessWidget {
     final imagePickerViewModel =
         Provider.of<ImagePickerViewModel>(context, listen: false);
 
+    // ✅ Set the alt text to Store Name
+    imagePickerViewModel.selectedImageAlt = nameController.text.trim();
+
     String? uploadedImageUrl;
     try {
       if (imagePickerViewModel.selectedImageBytes != null) {
@@ -94,8 +97,7 @@ class StoreFormButton extends StatelessWidget {
       trackingUrl: trackingUrlController.text.trim(),
       image: StoreImage(
         url: uploadedImageUrl ?? '',
-        alt:
-            imagePickerViewModel.selectedImageAlt?.trim() ?? 'Default Alt Text',
+        alt: imagePickerViewModel.selectedImageAlt?.trim() ?? 'Default Alt Text',
       ),
       seo: Seo(
         metaTitle: metaTitleController.text.trim(),
@@ -113,10 +115,10 @@ class StoreFormButton extends StatelessWidget {
     );
 
     try {
-      await Provider.of<StoreViewModel>(context, listen: false)
-          .createStore(store);
+      await Provider.of<StoreViewModel>(context, listen: false).createStore(store);
       Utils.toastMessage('Store created successfully!');
-      // ✅ Clear TextFields After Successful Submission
+
+      // ✅ Clear Form Fields After Successful Submission
       _clearFormFields();
 
       // ✅ Also Clear Selected Image in Image Picker
@@ -141,7 +143,7 @@ class StoreFormButton extends StatelessWidget {
     longDescriptionController.clear();
   }
 
-  /// ✅ SOLID Principle: Separate Concerns - Validation Logic in Its Own Method
+  /// ✅ Separate validation logic
   bool _validateFields(String? uploadedImageUrl) {
     if (nameController.text.trim().isEmpty) return false;
     if (directUrlController.text.trim().isEmpty ||

@@ -1,6 +1,6 @@
 class AppUrl {
-  // static const String baseUrl = "https://coupon-app-backend.vercel.app/api";
-  static const String baseUrl = "http://localhost:5000/api";
+  static const String baseUrl = "https://coupon-app-backend.vercel.app/api";
+  // static const String baseUrl = "http://localhost:5000/api";
 
   // Store URLs
   static const String createStoreUrl = "$baseUrl/stores";

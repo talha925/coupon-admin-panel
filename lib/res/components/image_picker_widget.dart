@@ -47,24 +47,31 @@ class ImagePickerWidget extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
+
             if (imagePickerViewModel.errorMessage != null)
               Text(
                 imagePickerViewModel.errorMessage!,
                 style: const TextStyle(color: Colors.red),
               ),
+
+            // ✅ Display Auto-Generated Alt Text
             if (imagePickerViewModel.selectedImageBytes != null)
               TextFormField(
-                onChanged: (value) {
-                  imagePickerViewModel.selectedImageAlt = value;
-                },
+                controller: TextEditingController(
+                  text: imagePickerViewModel.selectedImageAlt ??
+                      "Auto-generated Store Name",
+                ),
+                readOnly: true, // Make it non-editable
                 decoration: InputDecoration(
-                  labelText: "Alt Text",
+                  labelText: "Alt Text (Auto-generated from Store Name)",
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
               ),
+
             const SizedBox(height: 10),
+
             if (imagePickerViewModel.selectedImageName != null)
               ElevatedButton(
                 onPressed: () {
