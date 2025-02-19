@@ -1,11 +1,15 @@
+import 'package:coupon_admin_panel/model/store_model.dart';
 import 'package:coupon_admin_panel/view_model/categoryViewModel/category_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../../view_model/store_view_model/store_view_model.dart';
 import 'widget/store_form_button.dart';
 import 'widget/store_form_fields.dart';
 
 class StoreFormWidget extends StatefulWidget {
-  const StoreFormWidget({super.key});
+  final Data? store; // If provided, it's in edit mode
+
+  const StoreFormWidget({super.key, this.store});
 
   @override
   StoreFormWidgetState createState() => StoreFormWidgetState();
@@ -15,31 +19,78 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
   final _formKey = GlobalKey<FormState>();
 
   // Controllers for form fields
-  final nameController = TextEditingController();
-  final shortDescriptionController = TextEditingController();
-  final longDescriptionController = TextEditingController();
-  final directUrlController = TextEditingController();
-  final trackingUrlController = TextEditingController();
-  final metaTitleController = TextEditingController();
-  final metaDescriptionController = TextEditingController();
-  final metaKeywordsController = TextEditingController();
+  late TextEditingController nameController;
+  late TextEditingController shortDescriptionController;
+  late TextEditingController longDescriptionController;
+  late TextEditingController directUrlController;
+  late TextEditingController trackingUrlController;
+  late TextEditingController metaTitleController;
+  late TextEditingController metaDescriptionController;
+  late TextEditingController metaKeywordsController;
 
   // Focus Nodes for form fields
-  final nameFocusNode = FocusNode();
-  final shortDescriptionFocusNode = FocusNode();
-  final longDescriptionFocusNode = FocusNode();
-  final directUrlFocusNode = FocusNode();
-  final trackingUrlFocusNode = FocusNode();
-  final metaTitleFocusNode = FocusNode();
-  final metaDescriptionFocusNode = FocusNode();
-  final metaKeywordsFocusNode = FocusNode();
+  late FocusNode nameFocusNode;
+  late FocusNode shortDescriptionFocusNode;
+  late FocusNode longDescriptionFocusNode;
+  late FocusNode directUrlFocusNode;
+  late FocusNode trackingUrlFocusNode;
+  late FocusNode metaTitleFocusNode;
+  late FocusNode metaDescriptionFocusNode;
+  late FocusNode metaKeywordsFocusNode;
 
   // ValueNotifier for category selection
-  final ValueNotifier<String?> _selectedCategory = ValueNotifier<String?>(null);
+  late ValueNotifier<String?> _selectedCategory;
 
   // Toggles for Top Store and Editor's Choice
-  final ValueNotifier<bool> topStore = ValueNotifier(false);
-  final ValueNotifier<bool> editorsChoice = ValueNotifier(false);
+  late ValueNotifier<bool> topStore;
+  late ValueNotifier<bool> editorsChoice;
+
+  bool isEditing = false; // To track whether it's edit mode
+
+  @override
+  void initState() {
+    super.initState();
+
+    isEditing = widget.store != null;
+
+    // ✅ Initialize controllers only once
+    nameController = TextEditingController(text: widget.store?.name ?? '');
+    shortDescriptionController =
+        TextEditingController(text: widget.store?.shortDescription ?? '');
+    longDescriptionController =
+        TextEditingController(text: widget.store?.longDescription ?? '');
+    directUrlController =
+        TextEditingController(text: widget.store?.directUrl ?? '');
+    trackingUrlController =
+        TextEditingController(text: widget.store?.trackingUrl ?? '');
+    metaTitleController =
+        TextEditingController(text: widget.store?.seo.metaTitle ?? '');
+    metaDescriptionController =
+        TextEditingController(text: widget.store?.seo.metaDescription ?? '');
+    metaKeywordsController =
+        TextEditingController(text: widget.store?.seo.metaKeywords ?? '');
+
+    nameFocusNode = FocusNode();
+    shortDescriptionFocusNode = FocusNode();
+    longDescriptionFocusNode = FocusNode();
+    directUrlFocusNode = FocusNode();
+    trackingUrlFocusNode = FocusNode();
+    metaTitleFocusNode = FocusNode();
+    metaDescriptionFocusNode = FocusNode();
+    metaKeywordsFocusNode = FocusNode();
+
+    _selectedCategory = ValueNotifier<String?>(
+        widget.store?.categories.isNotEmpty == true
+            ? widget.store!.categories[0].id
+            : null);
+    topStore = ValueNotifier(widget.store?.isTopStore ?? false);
+    editorsChoice = ValueNotifier(widget.store?.isEditorsChoice ?? false);
+
+    // ✅ Use Future.microtask() to avoid unnecessary rebuilds
+    Future.microtask(() =>
+        Provider.of<CategoryViewModel>(context, listen: false)
+            .fetchCategories());
+  }
 
   @override
   void dispose() {
@@ -72,79 +123,67 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<CategoryViewModel>(context, listen: false).fetchCategories();
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
     print("Rebuilding StoreFormWidget UI...");
-    return Form(
-      key: _formKey,
-      child: Column(
-        children: [
-          // Store Form Fields
-          StoreFormFields(
-            nameController: nameController,
-            shortDescriptionController: shortDescriptionController,
-            longDescriptionController: longDescriptionController,
-            directUrlController: directUrlController,
-            trackingUrlController: trackingUrlController,
-            metaTitleController: metaTitleController,
-            metaDescriptionController: metaDescriptionController,
-            metaKeywordsController: metaKeywordsController,
-            nameFocusNode: nameFocusNode,
-            shortDescriptionFocusNode: shortDescriptionFocusNode,
-            longDescriptionFocusNode: longDescriptionFocusNode,
-            directUrlFocusNode: directUrlFocusNode,
-            trackingUrlFocusNode: trackingUrlFocusNode,
-            metaTitleFocusNode: metaTitleFocusNode,
-            metaDescriptionFocusNode: metaDescriptionFocusNode,
-            metaKeywordsFocusNode: metaKeywordsFocusNode,
-            selectedCategory: _selectedCategory,
-            onCategoryChanged: (String? newValue) {
-              _selectedCategory.value = newValue;
-            },
-            // topStore: topStore,
-            // editorsChoice: editorsChoice,
-          ),
-          const SizedBox(height: 20),
+    return SingleChildScrollView(
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ✅ Wrap StoreFormFields inside Consumer to avoid unnecessary rebuilds
+            Consumer<CategoryViewModel>(
+              builder: (context, categoryViewModel, child) {
+                return StoreFormFields(
+                  nameController: nameController,
+                  shortDescriptionController: shortDescriptionController,
+                  longDescriptionController: longDescriptionController,
+                  directUrlController: directUrlController,
+                  trackingUrlController: trackingUrlController,
+                  metaTitleController: metaTitleController,
+                  metaDescriptionController: metaDescriptionController,
+                  metaKeywordsController: metaKeywordsController,
+                  nameFocusNode: nameFocusNode,
+                  shortDescriptionFocusNode: shortDescriptionFocusNode,
+                  longDescriptionFocusNode: longDescriptionFocusNode,
+                  directUrlFocusNode: directUrlFocusNode,
+                  trackingUrlFocusNode: trackingUrlFocusNode,
+                  metaTitleFocusNode: metaTitleFocusNode,
+                  metaDescriptionFocusNode: metaDescriptionFocusNode,
+                  metaKeywordsFocusNode: metaKeywordsFocusNode,
+                  selectedCategory: _selectedCategory,
+                  onCategoryChanged: (String? newValue) {
+                    _selectedCategory.value = newValue;
+                  },
+                );
+              },
+            ),
+            const SizedBox(height: 20),
 
-          // Value Listeners for Toggles and Form Submission
-          ValueListenableBuilder<String?>(
-            valueListenable: _selectedCategory,
-            builder: (context, selectedCategoryValue, child) {
-              return ValueListenableBuilder<bool>(
-                valueListenable: topStore,
-                builder: (context, topStoreValue, _) {
-                  return ValueListenableBuilder<bool>(
-                    valueListenable: editorsChoice,
-                    builder: (context, editorsChoiceValue, __) {
-                      return StoreFormButton(
-                        formKey: _formKey,
-                        nameController: nameController,
-                        shortDescriptionController: shortDescriptionController,
-                        longDescriptionController: longDescriptionController,
-                        directUrlController: directUrlController,
-                        trackingUrlController: trackingUrlController,
-                        metaTitleController: metaTitleController,
-                        metaDescriptionController: metaDescriptionController,
-                        metaKeywordsController: metaKeywordsController,
-                        selectedCategory: selectedCategoryValue,
-                        topStore: topStoreValue,
-                        editorsChoice: editorsChoiceValue,
-                        language: 'English',
-                      );
-                    },
-                  );
-                },
-              );
-            },
-          ),
-        ],
+            // ✅ Use Selector to only rebuild specific toggles
+            Selector<StoreViewModel, Data?>(
+              selector: (_, viewModel) => viewModel.selectedStore,
+              builder: (context, selectedStore, child) {
+                return StoreFormButton(
+                  formKey: _formKey,
+                  nameController: nameController,
+                  shortDescriptionController: shortDescriptionController,
+                  longDescriptionController: longDescriptionController,
+                  directUrlController: directUrlController,
+                  trackingUrlController: trackingUrlController,
+                  metaTitleController: metaTitleController,
+                  metaDescriptionController: metaDescriptionController,
+                  metaKeywordsController: metaKeywordsController,
+                  selectedCategory: _selectedCategory.value,
+                  topStore: topStore.value,
+                  editorsChoice: editorsChoice.value,
+                  language: 'English',
+                  store: selectedStore,
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

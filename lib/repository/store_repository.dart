@@ -69,17 +69,44 @@ class StoreRepository {
     }
   }
 
+  // Future<void> updateStore(Map<String, dynamic> data) async {
+  //   try {
+  //     // if (kDebugMode) {
+  //     //   print(
+  //     //       "Updating data: $data to URL: ${AppUrl.updateStoreUrl(data['_id'])}");
+  //     // }
+  //     await _apiServices.getPutApiResponse(
+  //         AppUrl.updateStoreUrl(data['_id']), data);
+  //   } catch (e) {
+  //     if (kDebugMode) {
+  //       print("Error: $e");
+  //     }
+  //     rethrow;
+  //   }
+  // }
+
   Future<void> updateStore(Map<String, dynamic> data) async {
     try {
-      // if (kDebugMode) {
-      //   print(
-      //       "Updating data: $data to URL: ${AppUrl.updateStoreUrl(data['_id'])}");
-      // }
-      await _apiServices.getPutApiResponse(
-          AppUrl.updateStoreUrl(data['_id']), data);
+      final String storeId = data['_id']; // ✅ Extract ID correctly
+      if (storeId.isEmpty) {
+        throw Exception("Store ID is required for updating.");
+      }
+
+      final response = await _apiServices.getPutApiResponse(
+        AppUrl.updateStoreUrl(storeId), // ✅ Ensure correct URL
+        data,
+      );
+
+      if (response == null) {
+        throw Exception("Failed to update store: No response from server.");
+      }
+
+      if (kDebugMode) {
+        print("Store updated successfully: $response");
+      }
     } catch (e) {
       if (kDebugMode) {
-        print("Error: $e");
+        print("Error updating store: $e");
       }
       rethrow;
     }

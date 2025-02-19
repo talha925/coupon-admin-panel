@@ -1,5 +1,3 @@
-// lib/view/home/widget/drawer_widget.dart
-
 import 'package:coupon_admin_panel/model/page_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -28,51 +26,79 @@ class DrawerWidget extends StatelessWidget {
               ),
             ),
           ),
-          _buildListTile(
+          _buildExpansionTile(
             context,
             icon: Icons.supervised_user_circle,
-            page: AdminPage.coupons,
-            selectedPage: adminViewModel.currentPage,
-            adminViewModel: adminViewModel,
+            title: "Coupons",
+            options: [
+              _buildSubListTile(
+                  context, "Add Coupon", AdminPage.addCoupon, adminViewModel),
+              _buildSubListTile(context, "Update Coupon",
+                  AdminPage.updateCoupon, adminViewModel),
+            ],
           ),
-          _buildListTile(
+          _buildExpansionTile(
             context,
             icon: Icons.store,
-            page: AdminPage.stores,
-            selectedPage: adminViewModel.currentPage,
-            adminViewModel: adminViewModel,
+            title: "Stores",
+            options: [
+              _buildSubListTile(
+                  context, "Add Store", AdminPage.addStore, adminViewModel),
+              _buildSubListTile(
+                  context, "All Store", AdminPage.allStore, adminViewModel),
+              _buildSubListTile(context, "Update Store", AdminPage.updateStore,
+                  adminViewModel),
+            ],
           ),
-          _buildListTile(
+          _buildExpansionTile(
+            context,
+            icon: Icons.category,
+            title: "Categories",
+            options: [
+              _buildSubListTile(context, "Add Category", AdminPage.addCategory,
+                  adminViewModel),
+              _buildSubListTile(context, "Update Category",
+                  AdminPage.updateCategory, adminViewModel),
+            ],
+          ),
+          _buildExpansionTile(
             context,
             icon: Icons.person,
-            page: AdminPage.users,
-            selectedPage: adminViewModel.currentPage,
-            adminViewModel: adminViewModel,
-          ),
-          _buildListTile(
-            context,
-            icon: Icons.person,
-            page: AdminPage.category,
-            selectedPage: adminViewModel.currentPage,
-            adminViewModel: adminViewModel,
+            title: "Users",
+            options: [
+              _buildSubListTile(
+                  context, "Manage Users", AdminPage.users, adminViewModel),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildListTile(
+  Widget _buildExpansionTile(
     BuildContext context, {
     required IconData icon,
-    required AdminPage page,
-    required AdminPage selectedPage,
-    required AdminViewModel adminViewModel,
+    required String title,
+    required List<Widget> options,
   }) {
-    return ListTile(
+    return ExpansionTile(
       leading: Icon(icon),
-      title: Text(page.name),
-      selected: page == selectedPage,
-      onTap: () => adminViewModel.selectPage(page),
+      title: Text(title),
+      children: options,
+    );
+  }
+
+  Widget _buildSubListTile(
+    BuildContext context,
+    String title,
+    AdminPage page,
+    AdminViewModel adminViewModel,
+  ) {
+    return ListTile(
+      title: Text(title),
+      onTap: () {
+        adminViewModel.selectPage(page);
+      },
     );
   }
 }

@@ -3,6 +3,8 @@
 
 import 'dart:convert';
 
+import 'category_model.dart';
+
 StoreModel storeModelFromJson(String str) =>
     StoreModel.fromJson(json.decode(str));
 
@@ -34,8 +36,8 @@ class Data {
   String trackingUrl;
   String shortDescription;
   String longDescription;
-  StoreImage image; // ✅ Fix: Replaced `Image` with `StoreImage`
-  List<String> categories;
+  StoreImage image;
+  List<CategoryData> categories;
   Seo seo;
   String language;
   String id;
@@ -43,7 +45,8 @@ class Data {
   DateTime updatedAt;
   String slug;
   int v;
-
+  bool isTopStore;
+  bool isEditorsChoice;
   Data({
     required this.name,
     required this.directUrl,
@@ -59,6 +62,8 @@ class Data {
     required this.updatedAt,
     required this.slug,
     required this.v,
+    required this.isTopStore,
+    required this.isEditorsChoice,
   });
 
   factory Data.fromJson(Map<String, dynamic> json) => Data(
@@ -68,7 +73,12 @@ class Data {
         shortDescription: json["short_description"],
         longDescription: json["long_description"],
         image: StoreImage.fromJson(json["image"]),
-        categories: List<String>.from(json["categories"].map((x) => x)),
+        // ✅ Fix categories parsing (Convert List<String> → List<CategoryData>)
+        categories: (json["categories"] as List<dynamic>).map((x) {
+          return x is String
+              ? CategoryData(id: x, name: '')
+              : CategoryData.fromJson(x);
+        }).toList(),
         seo: Seo.fromJson(json["seo"]),
         language: json["language"],
         id: json["_id"],
@@ -76,6 +86,8 @@ class Data {
         updatedAt: DateTime.parse(json["updatedAt"]),
         slug: json["slug"],
         v: json["__v"],
+        isTopStore: json["isTopStore"] ?? false,
+        isEditorsChoice: json["isEditorsChoice"] ?? false,
       );
 
   Map<String, dynamic> toJson() => {
@@ -85,14 +97,17 @@ class Data {
         "short_description": shortDescription,
         "long_description": longDescription,
         "image": image.toJson(),
-        "categories": List<dynamic>.from(categories.map((x) => x)),
+        "categories": categories
+            .map((x) => x.toJson())
+            .toList(), // ✅ Ensure categories serialize correctly
         "seo": seo.toJson(),
         "language": language,
         "_id": id,
         "createdAt": createdAt.toIso8601String(),
         "updatedAt": updatedAt.toIso8601String(),
         "slug": slug,
-        "__v": v,
+        "__v": v, "isTopStore": isTopStore,
+        "isEditorsChoice": isEditorsChoice,
       };
 }
 

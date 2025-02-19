@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:coupon_admin_panel/view/store/widget/storeForm/store_form.dart';
 import 'package:coupon_admin_panel/view_model/store_view_model/store_view_model.dart';
-
 import 'widget/store_list_widget/store_list_get_widget.dart';
 
 class CreateStorePage extends StatelessWidget {
@@ -14,26 +13,27 @@ class CreateStorePage extends StatelessWidget {
     return Scaffold(
       body: Consumer<StoreViewModel>(
         builder: (context, storeViewModel, child) {
-          return const CustomScrollView(
-            slivers: [
-              // Adding the StoreFormWidget as a SliverToBoxAdapter
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: StoreFormWidget(),
+          return Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  // ✅ Ensure scrolling prevents layout overflow
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        StoreFormWidget(), // ✅ Form is now scrollable
+                        // const SizedBox(height: 16.0),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-              // Adding some space between the form and the list
-              SliverToBoxAdapter(
-                child: SizedBox(height: 16.0),
-              ),
-              // Adding the Stores List
-              SliverFillRemaining(
-                child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: StoreListPage(),
-                ),
-              ),
+              // Expanded(
+              //   child:
+              //       StoreListPage(), // ✅ Store list now takes remaining space
+              // ),
             ],
           );
         },

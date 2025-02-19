@@ -1,3 +1,4 @@
+import 'package:coupon_admin_panel/view/main/main_page.dart';
 import 'package:coupon_admin_panel/view/store/store_page.dart';
 import 'package:coupon_admin_panel/view_model/admin_view_model.dart';
 import 'package:coupon_admin_panel/view_model/store_view_model/store_view_model.dart';
@@ -34,7 +35,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
           useMaterial3: false,
         ),
-        home: const CreateStorePage(),
+        home: const MainPage(),
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'package:coupon_admin_panel/model/category_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:coupon_admin_panel/view_model/store_view_model/store_view_model.dart';
@@ -20,6 +21,7 @@ class StoreFormButton extends StatelessWidget {
   final bool topStore;
   final bool editorsChoice;
   final String language;
+  final Data? store; // ✅ Added store parameter
 
   // ✅ Using ValueNotifier to track submitting state
   final ValueNotifier<bool> isSubmitting = ValueNotifier(false);
@@ -39,6 +41,7 @@ class StoreFormButton extends StatelessWidget {
     required this.topStore,
     required this.editorsChoice,
     required this.language,
+    required this.store, // ✅ Accept store for edit mode
   });
 
   @override
@@ -52,7 +55,9 @@ class StoreFormButton extends StatelessWidget {
                 onPressed: () async {
                   await _submitStore(context);
                 },
-                child: const Text('Create Store'),
+                child: Text(store == null
+                    ? 'Create Store'
+                    : 'Update Store'), // ✅ Change button text
               );
       },
     );
@@ -69,10 +74,9 @@ class StoreFormButton extends StatelessWidget {
     final imagePickerViewModel =
         Provider.of<ImagePickerViewModel>(context, listen: false);
 
-    // ✅ Set the alt text to Store Name
-    imagePickerViewModel.selectedImageAlt = nameController.text.trim();
+    String? uploadedImageUrl =
+        store?.image.url; // ✅ Keep existing image if editing
 
-    String? uploadedImageUrl;
     try {
       if (imagePickerViewModel.selectedImageBytes != null) {
         uploadedImageUrl = await imagePickerViewModel.uploadImageToS3();
@@ -90,42 +94,54 @@ class StoreFormButton extends StatelessWidget {
       return;
     }
 
-    final store = Data(
-      id: '',
+    final isEditing = store != null; // ✅ Check if editing
+
+    final storeData = Data(
+      id: isEditing ? store!.id : '', // ✅ Keep existing ID for updates
       name: nameController.text.trim(),
       directUrl: directUrlController.text.trim(),
       trackingUrl: trackingUrlController.text.trim(),
       image: StoreImage(
-        url: uploadedImageUrl ?? '',
-        alt: imagePickerViewModel.selectedImageAlt?.trim() ?? 'Default Alt Text',
+        url: uploadedImageUrl ?? '', // ✅ Keep existing image if no new one
+        alt:
+            imagePickerViewModel.selectedImageAlt?.trim() ?? 'Default Alt Text',
       ),
       seo: Seo(
         metaTitle: metaTitleController.text.trim(),
         metaDescription: metaDescriptionController.text.trim(),
         metaKeywords: metaKeywordsController.text.trim(),
       ),
-      categories: selectedCategory != null ? [selectedCategory!] : [],
+      categories: selectedCategory != null
+          ? [CategoryData(id: selectedCategory!, name: '')]
+          : [],
       language: language,
-      createdAt: DateTime.now(),
+      createdAt: isEditing ? store!.createdAt : DateTime.now(),
       updatedAt: DateTime.now(),
       v: 0,
       shortDescription: shortDescriptionController.text.trim(),
       longDescription: longDescriptionController.text.trim(),
       slug: nameController.text.trim(),
+      isTopStore: store?.isTopStore ?? false,
+      isEditorsChoice: store?.isEditorsChoice ?? false,
     );
 
     try {
-      await Provider.of<StoreViewModel>(context, listen: false).createStore(store);
-      Utils.toastMessage('Store created successfully!');
+      final storeViewModel =
+          Provider.of<StoreViewModel>(context, listen: false);
 
-      // ✅ Clear Form Fields After Successful Submission
+      if (isEditing) {
+        await storeViewModel.updateStore(storeData); // ✅ Update existing store
+        Utils.toastMessage('Store updated successfully!');
+      } else {
+        await storeViewModel.createStore(storeData); // ✅ Create new store
+        Utils.toastMessage('Store created successfully!');
+      }
+
       _clearFormFields();
-
-      // ✅ Also Clear Selected Image in Image Picker
       imagePickerViewModel.clearImage();
     } catch (e) {
-      debugPrint('Error creating store: $e');
-      Utils.toastMessage('Error creating store. Please try again.');
+      debugPrint('Error saving store: $e');
+      Utils.toastMessage('Error saving store. Please try again.');
     } finally {
       isSubmitting.value = false; // Stop loading state
     }

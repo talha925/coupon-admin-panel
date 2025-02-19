@@ -8,13 +8,24 @@ class StoreViewModel with ChangeNotifier {
   bool _isFetching = false;
   bool _isSubmitting = false;
   String? _errorMessage;
+  Data? _selectedStore;
 
   bool get isFetching => _isFetching;
   bool get isSubmitting => _isSubmitting;
   String? get errorMessage => _errorMessage;
+  Data? get selectedStore => _selectedStore; // Getter for selected store
 
   List<Data> _stores = [];
+  List<Data> _filteredStores = [];
+
   List<Data> get stores => _stores;
+  List<Data> get filteredStores => _filteredStores;
+
+  // Select Store for Editing
+  void selectStore(Data? store) {
+    _selectedStore = store;
+    notifyListeners(); // Notify UI when store selection changes
+  }
 
   // Fetch stores from repository
   Future<void> getStores() async {
@@ -26,7 +37,10 @@ class StoreViewModel with ChangeNotifier {
     try {
       final List<Data> fetchedStores = await _storeRepository.fetchStores();
       _stores = fetchedStores;
+      _filteredStores =
+          List.from(_stores); // Ensure filteredStores is initialized
       _errorMessage = null;
+
       if (kDebugMode) {
         print('Stores fetched successfully: ${_stores.length}');
       }
@@ -39,6 +53,19 @@ class StoreViewModel with ChangeNotifier {
       _isFetching = false;
       notifyListeners();
     }
+  }
+
+  // 🔹 Search Stores Method
+  void searchStores(String query) {
+    if (query.isEmpty) {
+      _filteredStores = _stores; // Reset to full list
+    } else {
+      _filteredStores = _stores
+          .where(
+              (store) => store.name.toLowerCase().contains(query.toLowerCase()))
+          .toList();
+    }
+    notifyListeners();
   }
 
   // Create a new store
@@ -56,17 +83,18 @@ class StoreViewModel with ChangeNotifier {
       final Map<String, dynamic> response =
           await _storeRepository.createStore(store.toJson());
 
-      // Access 'data' and validate '_id'
       if (response.containsKey('data') &&
           response['data'] is Map<String, dynamic> &&
           response['data']['_id'] != null &&
           response['data']['_id'].isNotEmpty) {
         final newStore = Data.fromJson(response['data']);
+        _stores.add(newStore);
+        _filteredStores = _stores;
+        _errorMessage = null;
+
         if (kDebugMode) {
           print("Store created successfully: ${newStore.id}");
         }
-        _stores.add(newStore);
-        _errorMessage = null;
       } else {
         throw Exception('Store ID not found in the response or empty');
       }
@@ -91,7 +119,9 @@ class StoreViewModel with ChangeNotifier {
     try {
       await _storeRepository.deleteStore(storeId);
       _stores.removeWhere((store) => store.id == storeId);
+      _filteredStores = _stores;
       _errorMessage = null;
+
       if (kDebugMode) {
         print('Store deleted successfully');
       }
@@ -118,6 +148,7 @@ class StoreViewModel with ChangeNotifier {
       final index = _stores.indexWhere((s) => s.id == store.id);
       if (index != -1) {
         _stores[index] = store;
+        _filteredStores = _stores;
         if (kDebugMode) {
           print('Store updated successfully');
         }
@@ -139,6 +170,7 @@ class StoreViewModel with ChangeNotifier {
   @override
   void dispose() {
     _stores.clear();
+    _filteredStores.clear();
     super.dispose();
   }
 }

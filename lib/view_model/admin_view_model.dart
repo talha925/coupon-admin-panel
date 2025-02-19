@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:coupon_admin_panel/model/page_model.dart';
 
 class AdminViewModel with ChangeNotifier {
-  AdminPage _currentPage = AdminPage.coupons;
+  AdminPage _currentPage = AdminPage.stores;
 
   AdminPage get currentPage => _currentPage;
 
