@@ -1,4 +1,4 @@
-import 'package:coupon_admin_panel/res/components/toggle_switch_field.dart';
+import 'package:coupon_admin_panel/view_model/store_view_model/store_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:coupon_admin_panel/utils/form_util.dart';
 import 'package:coupon_admin_panel/res/components/custom_textfild_component.dart';
@@ -174,32 +174,62 @@ class StoreFormFields extends StatelessWidget {
         const SizedBox(height: 20),
 
         // Language Dropdown
-        Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            const Text(
-              "Language",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(width: 20),
-            DropdownButton<String>(
-              value: "English",
-              items: const [
-                DropdownMenuItem(value: "English", child: Text("English")),
-                DropdownMenuItem(value: "Spanish", child: Text("Spanish")),
-              ],
-              onChanged: (value) {
-                // Handle language change if required
+        // Row(
+        //   mainAxisAlignment: MainAxisAlignment.start,
+        //   children: [
+        //     const Text(
+        //       "Language",
+        //       style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        //     ),
+        //     const SizedBox(width: 20),
+        //     DropdownButton<String>(
+        //       value: "English",
+        //       items: const [
+        //         DropdownMenuItem(value: "English", child: Text("English")),
+        //         DropdownMenuItem(value: "Spanish", child: Text("Spanish")),
+        //       ],
+        //       onChanged: (value) {
+        //         // Handle language change if required
+        //       },
+        //     ),
+        //   ],
+        // ),
+        // const SizedBox(height: 20),
+        // Top Store Toggle
+        ValueListenableBuilder<bool>(
+          valueListenable: isTopStore,
+          builder: (context, value, child) {
+            return Consumer<StoreViewModel>(
+              builder: (context, storeViewModel, child) {
+                return SwitchListTile(
+                  title: const Text("Top Store"),
+                  value: storeViewModel.isTopStore,
+                  onChanged: (newValue) {
+                    storeViewModel.toggleTopStore(newValue);
+                  },
+                );
               },
-            ),
-          ],
+            );
+          },
         ),
-        const SizedBox(height: 20),
+        // Editors Choice Toggle
 
-        // Top Store and Editors Choice Toggles
-        ToggleSwitchField(label: "Top Store", switchValue: isTopStore),
-        ToggleSwitchField(
-            label: "Editors Choice", switchValue: isEditorsChoice),
+        ValueListenableBuilder<bool>(
+          valueListenable: isEditorsChoice,
+          builder: (context, value, child) {
+            return Consumer<StoreViewModel>(
+              builder: (context, storeViewModel, child) {
+                return SwitchListTile(
+                  title: const Text("Editors Choice"),
+                  value: storeViewModel.isEditorsChoice,
+                  onChanged: (newValue) {
+                    storeViewModel.toggleEditorsChoice(newValue);
+                  },
+                );
+              },
+            );
+          },
+        ),
       ],
     );
   }

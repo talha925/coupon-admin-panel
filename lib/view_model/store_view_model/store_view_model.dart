@@ -9,11 +9,13 @@ class StoreViewModel with ChangeNotifier {
   bool _isSubmitting = false;
   String? _errorMessage;
   Data? _selectedStore;
+  String? _selectedHeading;
 
   bool get isFetching => _isFetching;
   bool get isSubmitting => _isSubmitting;
   String? get errorMessage => _errorMessage;
   Data? get selectedStore => _selectedStore; // Getter for selected store
+  String? get selectedHeading => _selectedHeading;
 
   List<Data> _stores = [];
   List<Data> _filteredStores = [];
@@ -21,10 +23,36 @@ class StoreViewModel with ChangeNotifier {
   List<Data> get stores => _stores;
   List<Data> get filteredStores => _filteredStores;
 
+  // 🔹 Track toggle values
+  bool _isTopStore = false;
+  bool _isEditorsChoice = false;
+
+  bool get isTopStore => _isTopStore;
+  bool get isEditorsChoice => _isEditorsChoice;
+
+  // 🔹 Toggle Functions
+  void toggleTopStore(bool value) {
+    _isTopStore = value;
+    print("🔄 Updated isTopStore: $_isTopStore");
+    notifyListeners();
+  }
+
+  void toggleEditorsChoice(bool value) {
+    _isEditorsChoice = value;
+    print("🔄 Updated isEditorsChoice: $_isEditorsChoice");
+    notifyListeners();
+  }
+
   // Select Store for Editing
   void selectStore(Data? store) {
     _selectedStore = store;
     notifyListeners(); // Notify UI when store selection changes
+  }
+
+  //selected heading
+  void selectHeading(String heading) {
+    _selectedHeading = heading;
+    notifyListeners();
   }
 
   // Fetch stores from repository
@@ -91,6 +119,7 @@ class StoreViewModel with ChangeNotifier {
         _stores.add(newStore);
         _filteredStores = _stores;
         _errorMessage = null;
+        print("Server Response: $response"); // ✅ Print server response
 
         if (kDebugMode) {
           print("Store created successfully: ${newStore.id}");

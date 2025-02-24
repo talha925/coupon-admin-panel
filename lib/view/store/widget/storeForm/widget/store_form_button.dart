@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:coupon_admin_panel/model/category_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -21,7 +23,7 @@ class StoreFormButton extends StatelessWidget {
   final bool topStore;
   final bool editorsChoice;
   final String language;
-  final Data? store; // ✅ Added store parameter
+  final Data? store; // ✅ Store for editing mode
 
   // ✅ Using ValueNotifier to track submitting state
   final ValueNotifier<bool> isSubmitting = ValueNotifier(false);
@@ -41,29 +43,33 @@ class StoreFormButton extends StatelessWidget {
     required this.topStore,
     required this.editorsChoice,
     required this.language,
-    required this.store, // ✅ Accept store for edit mode
+    required this.store,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: isSubmitting,
-      builder: (context, submitting, child) {
-        return submitting
-            ? const CircularProgressIndicator()
-            : ElevatedButton(
-                onPressed: () async {
-                  await _submitStore(context);
-                },
-                child: Text(store == null
-                    ? 'Create Store'
-                    : 'Update Store'), // ✅ Change button text
-              );
+    return Consumer<StoreViewModel>(
+      builder: (context, storeViewModel, child) {
+        return ValueListenableBuilder<bool>(
+          valueListenable: isSubmitting,
+          builder: (context, submitting, child) {
+            return submitting
+                ? const CircularProgressIndicator()
+                : ElevatedButton(
+                    onPressed: () async {
+                      await _submitStore(context, storeViewModel);
+                    },
+                    child:
+                        Text(store == null ? 'Create Store' : 'Update Store'),
+                  );
+          },
+        );
       },
     );
   }
 
-  Future<void> _submitStore(BuildContext context) async {
+  Future<void> _submitStore(
+      BuildContext context, StoreViewModel storeViewModel) async {
     if (!formKey.currentState!.validate()) {
       Utils.toastMessage('Please fill in all required fields.');
       return;
@@ -74,35 +80,39 @@ class StoreFormButton extends StatelessWidget {
     final imagePickerViewModel =
         Provider.of<ImagePickerViewModel>(context, listen: false);
 
-    String? uploadedImageUrl =
-        store?.image.url; // ✅ Keep existing image if editing
+    String? uploadedImageUrl = store?.image.url; // ✅ Keep existing image
 
     try {
       if (imagePickerViewModel.selectedImageBytes != null) {
         uploadedImageUrl = await imagePickerViewModel.uploadImageToS3();
       }
     } catch (e) {
-      debugPrint('Error uploading image: $e');
+      debugPrint('❌ Error uploading image: $e');
       Utils.toastMessage('Error uploading image. Please try again.');
       isSubmitting.value = false;
       return;
     }
 
-    if (!_validateFields(uploadedImageUrl)) {
-      Utils.toastMessage('Please fill in all required fields correctly.');
-      isSubmitting.value = false;
-      return;
-    }
+    // ✅ Fetch selected heading from StoreViewModel
+    String selectedHeading =
+        storeViewModel.selectedHeading ?? 'Coupons & Promo Codes';
 
-    final isEditing = store != null; // ✅ Check if editing
+    // ✅ Get latest toggle values from UI before sending
+    final bool finalTopStore = storeViewModel.isTopStore;
+    final bool finalEditorsChoice = storeViewModel.isEditorsChoice;
+
+    // ✅ Debug: Print values before sending
+    print("🚀 Final Data Before Sending:");
+    print("✔ isTopStore: $topStore");
+    print("✔ isEditorsChoice: $editorsChoice");
 
     final storeData = Data(
-      id: isEditing ? store!.id : '', // ✅ Keep existing ID for updates
+      id: store?.id ?? '',
       name: nameController.text.trim(),
       directUrl: directUrlController.text.trim(),
       trackingUrl: trackingUrlController.text.trim(),
       image: StoreImage(
-        url: uploadedImageUrl ?? '', // ✅ Keep existing image if no new one
+        url: uploadedImageUrl ?? '',
         alt:
             imagePickerViewModel.selectedImageAlt?.trim() ?? 'Default Alt Text',
       ),
@@ -115,32 +125,35 @@ class StoreFormButton extends StatelessWidget {
           ? [CategoryData(id: selectedCategory!, name: '')]
           : [],
       language: language,
-      createdAt: isEditing ? store!.createdAt : DateTime.now(),
+      createdAt: store?.createdAt ?? DateTime.now(),
       updatedAt: DateTime.now(),
       v: 0,
       shortDescription: shortDescriptionController.text.trim(),
       longDescription: longDescriptionController.text.trim(),
       slug: nameController.text.trim(),
-      isTopStore: store?.isTopStore ?? false,
-      isEditorsChoice: store?.isEditorsChoice ?? false,
+      isTopStore:
+          finalTopStore, // ✅ Ensure true/false values are correctly assigned
+      isEditorsChoice:
+          finalEditorsChoice, // ✅ Ensure true/false values are correc
+      heading: selectedHeading, // ✅ Add heading
     );
 
-    try {
-      final storeViewModel =
-          Provider.of<StoreViewModel>(context, listen: false);
+    print(
+        "🚀 FINAL STORE DATA SENT: ${jsonEncode(storeData)}"); // ✅ Debugging data before sending
 
-      if (isEditing) {
-        await storeViewModel.updateStore(storeData); // ✅ Update existing store
+    try {
+      if (store != null) {
+        await storeViewModel.updateStore(storeData);
         Utils.toastMessage('Store updated successfully!');
       } else {
-        await storeViewModel.createStore(storeData); // ✅ Create new store
+        await storeViewModel.createStore(storeData);
         Utils.toastMessage('Store created successfully!');
       }
 
       _clearFormFields();
       imagePickerViewModel.clearImage();
     } catch (e) {
-      debugPrint('Error saving store: $e');
+      debugPrint('❌ Error saving store: $e');
       Utils.toastMessage('Error saving store. Please try again.');
     } finally {
       isSubmitting.value = false; // Stop loading state
@@ -160,7 +173,7 @@ class StoreFormButton extends StatelessWidget {
   }
 
   /// ✅ Separate validation logic
-  bool _validateFields(String? uploadedImageUrl) {
+  bool _validateFields(String? uploadedImageUrl, String? selectedHeading) {
     if (nameController.text.trim().isEmpty) return false;
     if (directUrlController.text.trim().isEmpty ||
         !Uri.parse(directUrlController.text.trim()).isAbsolute) return false;
@@ -169,6 +182,14 @@ class StoreFormButton extends StatelessWidget {
     if (shortDescriptionController.text.trim().isEmpty) return false;
     if (longDescriptionController.text.trim().isEmpty) return false;
     if (uploadedImageUrl == null || uploadedImageUrl.isEmpty) return false;
+    if (selectedHeading == null ||
+        ![
+          'Promo Codes & Coupon',
+          'Coupons & Promo Codes',
+          'Voucher & Discount Codes'
+        ].contains(selectedHeading)) {
+      return false;
+    }
     return true;
   }
 }

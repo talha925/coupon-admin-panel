@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:coupon_admin_panel/data/network/base_api_services.dart';
 import 'package:coupon_admin_panel/data/network/network_api_services.dart';
 import 'package:coupon_admin_panel/model/store_model.dart';
@@ -9,13 +11,15 @@ class StoreRepository {
 
   Future<dynamic> createStore(Map<String, dynamic> data) async {
     try {
-      // if (kDebugMode) {
-      //   print("Sending data: $data to URL: ${AppUrl.createStoreUrl}");
-      // }
+      if (kDebugMode) {
+        print("Sending data: $data to URL: ${AppUrl.createStoreUrl}");
+        print(
+            "Sending store data: ${jsonEncode(data)}"); // ✅ Log request payload
+      }
       dynamic response =
           await _apiServices.getPostApiResponse(AppUrl.createStoreUrl, data);
       if (kDebugMode) {
-        // print("Response: $response");
+        print("Response: $response");
       }
       return response;
     } catch (e) {
@@ -68,22 +72,6 @@ class StoreRepository {
       rethrow;
     }
   }
-
-  // Future<void> updateStore(Map<String, dynamic> data) async {
-  //   try {
-  //     // if (kDebugMode) {
-  //     //   print(
-  //     //       "Updating data: $data to URL: ${AppUrl.updateStoreUrl(data['_id'])}");
-  //     // }
-  //     await _apiServices.getPutApiResponse(
-  //         AppUrl.updateStoreUrl(data['_id']), data);
-  //   } catch (e) {
-  //     if (kDebugMode) {
-  //       print("Error: $e");
-  //     }
-  //     rethrow;
-  //   }
-  // }
 
   Future<void> updateStore(Map<String, dynamic> data) async {
     try {

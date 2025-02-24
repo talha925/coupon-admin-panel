@@ -47,6 +47,7 @@ class Data {
   int v;
   bool isTopStore;
   bool isEditorsChoice;
+  String heading; // ✅ New field
   Data({
     required this.name,
     required this.directUrl,
@@ -64,6 +65,7 @@ class Data {
     required this.v,
     required this.isTopStore,
     required this.isEditorsChoice,
+    required this.heading, // ✅ Include heading
   });
 
   factory Data.fromJson(Map<String, dynamic> json) => Data(
@@ -88,6 +90,7 @@ class Data {
         v: json["__v"],
         isTopStore: json["isTopStore"] ?? false,
         isEditorsChoice: json["isEditorsChoice"] ?? false,
+        heading: json["heading"] ?? 'Coupons & Promo Codes',
       );
 
   Map<String, dynamic> toJson() => {
@@ -108,6 +111,7 @@ class Data {
         "slug": slug,
         "__v": v, "isTopStore": isTopStore,
         "isEditorsChoice": isEditorsChoice,
+        "heading": heading,
       };
 }
 
