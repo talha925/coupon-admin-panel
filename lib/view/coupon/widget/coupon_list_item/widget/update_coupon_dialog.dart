@@ -5,122 +5,116 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:coupon_admin_panel/model/coupon_model.dart';
 import 'package:coupon_admin_panel/res/components/custom_textfild_component.dart';
+class UpdateCouponDialog extends StatefulWidget {
+  final CouponData coupon;
+  final Function(Map<String, dynamic>) onUpdate;
 
-class UpdateCouponDialog extends StatelessWidget {
-  final Datum coupon;
+  const UpdateCouponDialog({
+    super.key,
+    required this.coupon,
+    required this.onUpdate,
+  });
 
-  const UpdateCouponDialog({super.key, required this.coupon});
+  @override
+  State<UpdateCouponDialog> createState() => _UpdateCouponDialogState();
+}
+
+class _UpdateCouponDialogState extends State<UpdateCouponDialog> {
+  late final TextEditingController _offerNameController;
+  late final TextEditingController _codeController;
+  bool _isActiveSelected = true;
+  bool _isFeaturedForHome = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _offerNameController =
+        TextEditingController(text: widget.coupon.offerDetails);
+    _codeController = TextEditingController(text: widget.coupon.code);
+    _isActiveSelected = widget.coupon.active;
+    _isFeaturedForHome = widget.coupon.featuredForHome;
+  }
+
+  @override
+  void dispose() {
+    _offerNameController.dispose();
+    _codeController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final codeController = TextEditingController(text: coupon.code);
-    final descriptionController =
-        TextEditingController(text: coupon.description);
-    final discountController =
-        TextEditingController(text: coupon.discount.toString());
-    final expirationDateController = TextEditingController(
-        text: DateFormat('yyyy-MM-dd').format(coupon.expirationDate));
-    final affiliateLinkController =
-        TextEditingController(text: coupon.affiliateLink);
-
     return AlertDialog(
       title: const Text('Update Coupon'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CustomTextFormField(
-              controller: codeController,
-              labelText: 'Coupon Code',
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter a coupon code';
-                }
-                return null;
-              },
-            ),
-            CustomTextFormField(
-              controller: descriptionController,
-              labelText: 'Description',
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter a description';
-                }
-                return null;
-              },
-            ),
-            CustomTextFormField(
-              controller: discountController,
-              labelText: 'Discount (%)',
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter a discount';
-                }
-                return null;
-              },
-            ),
-            TextFormField(
-              controller: expirationDateController,
-              decoration: InputDecoration(
-                labelText: 'Expiration Date',
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.calendar_today),
-                  onPressed: () => AppDateUtils.selectDate(
-                    context: context,
-                    controller: expirationDateController,
-                  ),
-                ),
+            TextField(
+              controller: _offerNameController,
+              decoration: const InputDecoration(
+                labelText: 'Offer Details',
+                border: OutlineInputBorder(),
               ),
-              readOnly: true,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please select an expiration date';
-                }
-                return null;
-              },
             ),
-            CustomTextFormField(
-              controller: affiliateLinkController,
-              labelText: 'Affiliate Link',
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter an affiliate link';
-                }
-                if (!Uri.parse(value).isAbsolute) {
-                  return 'Please enter a valid URL';
-                }
-                return null;
-              },
+            const SizedBox(height: 16),
+            TextField(
+              controller: _codeController,
+              decoration: const InputDecoration(
+                labelText: 'Coupon Code',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Text('Active'),
+                const SizedBox(width: 16),
+                Switch(
+                  value: _isActiveSelected,
+                  onChanged: (value) {
+                    setState(() {
+                      _isActiveSelected = value;
+                    });
+                  },
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                const Text('Featured'),
+                const SizedBox(width: 16),
+                Switch(
+                  value: _isFeaturedForHome,
+                  onChanged: (value) {
+                    setState(() {
+                      _isFeaturedForHome = value;
+                    });
+                  },
+                ),
+              ],
             ),
           ],
         ),
       ),
       actions: [
         TextButton(
+          onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
-          onPressed: () {
-            Navigator.pop(context);
-          },
         ),
-        TextButton(
-          child: const Text('Update'),
+        ElevatedButton(
           onPressed: () {
-            final updatedCoupon = Datum(
-              id: coupon.id,
-              code: codeController.text,
-              description: descriptionController.text,
-              discount:
-                  int.tryParse(discountController.text) ?? coupon.discount,
-              expirationDate: DateTime.parse(expirationDateController.text),
-              store: coupon.store,
-              affiliateLink: affiliateLinkController.text,
-              v: coupon.v,
-            );
-
-            Provider.of<CouponViewModel>(context, listen: false)
-                .updateCoupon(updatedCoupon);
+            final Map<String, dynamic> updatedData = {
+              'offerDetails': _offerNameController.text,
+              'code': _codeController.text,
+              'active': _isActiveSelected,
+              'featuredForHome': _isFeaturedForHome,
+              'storeId': widget.coupon.storeId,
+            };
+            widget.onUpdate(updatedData);
             Navigator.pop(context);
           },
+          child: const Text('Update'),
         ),
       ],
     );

@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import '../../../../view_model/store_view_model/store_view_model.dart';
 import 'widget/store_form_button.dart';
 import 'widget/store_form_fields.dart';
+import 'package:coupon_admin_panel/data/response/api_response.dart';
+import 'package:coupon_admin_panel/model/category_model.dart';
 
 class StoreFormWidget extends StatefulWidget {
   final Data? store; // If provided, it's in edit mode
@@ -124,66 +126,64 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
 
   @override
   Widget build(BuildContext context) {
-    print("Rebuilding StoreFormWidget UI...");
-    return SingleChildScrollView(
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ✅ Wrap StoreFormFields inside Consumer to avoid unnecessary rebuilds
-            Consumer<CategoryViewModel>(
-              builder: (context, categoryViewModel, child) {
-                return StoreFormFields(
-                  nameController: nameController,
-                  shortDescriptionController: shortDescriptionController,
-                  longDescriptionController: longDescriptionController,
-                  directUrlController: directUrlController,
-                  trackingUrlController: trackingUrlController,
-                  metaTitleController: metaTitleController,
-                  metaDescriptionController: metaDescriptionController,
-                  metaKeywordsController: metaKeywordsController,
-                  nameFocusNode: nameFocusNode,
-                  shortDescriptionFocusNode: shortDescriptionFocusNode,
-                  longDescriptionFocusNode: longDescriptionFocusNode,
-                  directUrlFocusNode: directUrlFocusNode,
-                  trackingUrlFocusNode: trackingUrlFocusNode,
-                  metaTitleFocusNode: metaTitleFocusNode,
-                  metaDescriptionFocusNode: metaDescriptionFocusNode,
-                  metaKeywordsFocusNode: metaKeywordsFocusNode,
-                  selectedCategory: _selectedCategory,
-                  onCategoryChanged: (String? newValue) {
-                    _selectedCategory.value = newValue;
-                  },
-                );
-              },
-            ),
-            const SizedBox(height: 20),
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ✅ Use Selector instead of Consumer for better rebuilds
+          Selector<CategoryViewModel, ApiResponse<List<CategoryData>>>(
+            selector: (_, viewModel) => viewModel.categoryResponse,
+            builder: (context, categoryResponse, child) {
+              return StoreFormFields(
+                nameController: nameController,
+                shortDescriptionController: shortDescriptionController,
+                longDescriptionController: longDescriptionController,
+                directUrlController: directUrlController,
+                trackingUrlController: trackingUrlController,
+                metaTitleController: metaTitleController,
+                metaDescriptionController: metaDescriptionController,
+                metaKeywordsController: metaKeywordsController,
+                nameFocusNode: nameFocusNode,
+                shortDescriptionFocusNode: shortDescriptionFocusNode,
+                longDescriptionFocusNode: longDescriptionFocusNode,
+                directUrlFocusNode: directUrlFocusNode,
+                trackingUrlFocusNode: trackingUrlFocusNode,
+                metaTitleFocusNode: metaTitleFocusNode,
+                metaDescriptionFocusNode: metaDescriptionFocusNode,
+                metaKeywordsFocusNode: metaKeywordsFocusNode,
+                selectedCategory: _selectedCategory,
+                onCategoryChanged: (String? newValue) {
+                  _selectedCategory.value = newValue;
+                },
+              );
+            },
+          ),
+          const SizedBox(height: 20),
 
-            // ✅ Use Selector to only rebuild specific toggles
-            Selector<StoreViewModel, Data?>(
-              selector: (_, viewModel) => viewModel.selectedStore,
-              builder: (context, selectedStore, child) {
-                return StoreFormButton(
-                  formKey: _formKey,
-                  nameController: nameController,
-                  shortDescriptionController: shortDescriptionController,
-                  longDescriptionController: longDescriptionController,
-                  directUrlController: directUrlController,
-                  trackingUrlController: trackingUrlController,
-                  metaTitleController: metaTitleController,
-                  metaDescriptionController: metaDescriptionController,
-                  metaKeywordsController: metaKeywordsController,
-                  selectedCategory: _selectedCategory.value,
-                  topStore: topStore.value,
-                  editorsChoice: editorsChoice.value,
-                  language: 'English',
-                  store: selectedStore,
-                );
-              },
-            ),
-          ],
-        ),
+          // ✅ Use Selector to only rebuild specific parts when needed
+          Selector<StoreViewModel, Data?>(
+            selector: (_, viewModel) => viewModel.selectedStore,
+            builder: (context, selectedStore, child) {
+              return StoreFormButton(
+                formKey: _formKey,
+                nameController: nameController,
+                shortDescriptionController: shortDescriptionController,
+                longDescriptionController: longDescriptionController,
+                directUrlController: directUrlController,
+                trackingUrlController: trackingUrlController,
+                metaTitleController: metaTitleController,
+                metaDescriptionController: metaDescriptionController,
+                metaKeywordsController: metaKeywordsController,
+                selectedCategory: _selectedCategory.value,
+                topStore: topStore.value,
+                editorsChoice: editorsChoice.value,
+                language: 'English',
+                store: selectedStore,
+              );
+            },
+          ),
+        ],
       ),
     );
   }

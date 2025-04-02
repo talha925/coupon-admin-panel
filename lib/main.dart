@@ -2,6 +2,7 @@ import 'package:coupon_admin_panel/view/main/main_page.dart';
 import 'package:coupon_admin_panel/view_model/admin_view_model.dart';
 import 'package:coupon_admin_panel/view_model/store_view_model/store_view_model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'view_model/categoryViewModel/category_view_model.dart';
 import 'view_model/coupon_view_model/coupon_view_model.dart';
@@ -9,6 +10,7 @@ import 'view_model/services/image_picker_view_model_web.dart';
 import 'view_model/store_view_model/store_selection_view_model.dart';
 
 void main() {
+  debugRepaintRainbowEnabled = false;
   runApp(const MyApp());
 }
 

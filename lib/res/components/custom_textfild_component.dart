@@ -9,10 +9,11 @@ class CustomTextFormField extends StatelessWidget {
   final FocusNode? focusNode; // Current field's focus node
   final FocusNode?
       nextFocusNode; // Next field's focus node to shift focus on submit
-  final TextInputType keyboardType;
+  final TextInputType? keyboardType;
   final bool readOnly; // To make the field read-only
   final Widget? suffixIcon; // For additional icons
   final Function(String)? onChanged;
+  final int? maxLines;
 
   const CustomTextFormField({
     super.key,
@@ -22,10 +23,11 @@ class CustomTextFormField extends StatelessWidget {
     this.isObscure = false,
     this.focusNode,
     this.nextFocusNode,
-    this.keyboardType = TextInputType.text,
+    this.keyboardType,
     this.readOnly = false,
     this.suffixIcon,
     this.onChanged,
+    this.maxLines,
   });
 
   @override
@@ -70,6 +72,7 @@ class CustomTextFormField extends StatelessWidget {
             Utils.fieldFocusChange(context, focusNode!, nextFocusNode!);
           }
         },
+        maxLines: maxLines ?? 1,
       ),
     );
   }

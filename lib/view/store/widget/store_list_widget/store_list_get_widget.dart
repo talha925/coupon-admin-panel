@@ -4,119 +4,213 @@ import 'package:provider/provider.dart';
 import 'package:coupon_admin_panel/view/store/widget/storeForm/store_form.dart';
 import 'package:coupon_admin_panel/view_model/store_view_model/store_view_model.dart';
 import 'widget/store_list_item.dart';
+import 'package:coupon_admin_panel/view/widgets/error_widget.dart';
 
-class StoreListPage extends StatelessWidget {
+class StoreListPage extends StatefulWidget {
   const StoreListPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final storeViewModel = Provider.of<StoreViewModel>(context, listen: false);
+  State<StoreListPage> createState() => _StoreListPageState();
+}
 
-    // ✅ Ensure stores are fetched when the page loads
-    Future.microtask(() {
-      if (storeViewModel.stores.isEmpty) {
-        storeViewModel.getStores();
-      }
+class _StoreListPageState extends State<StoreListPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<StoreViewModel>(context, listen: false).getStores();
     });
+  }
 
-    print("StoreListPage");
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Selector<StoreViewModel, Data?>(
-          selector: (_, storeViewModel) => storeViewModel.selectedStore,
-          builder: (context, selectedStore, child) {
-            return Text(selectedStore == null ? 'Store List' : 'Edit Store');
-          },
-        ),
-        leading: Selector<StoreViewModel, Data?>(
-          selector: (_, storeViewModel) => storeViewModel.selectedStore,
-          builder: (context, selectedStore, child) {
-            return selectedStore != null
-                ? IconButton(
-                    icon: Icon(Icons.arrow_back),
-                    onPressed: () {
-                      Provider.of<StoreViewModel>(context, listen: false)
-                          .selectStore(null);
-                    },
-                  )
-                : SizedBox.shrink(); // ✅ Avoid null widget issue
+        title: const Text('Store List'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              showSearch(
+                  context: context,
+                  delegate: StoreSearchDelegate(
+                      Provider.of<StoreViewModel>(context, listen: false)));
+            },
+          ),
+        ],
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Consumer<StoreViewModel>(
+          builder: (context, storeViewModel, _) {
+            return ApiStateHandler<List<Data>>(
+              isLoading: storeViewModel.isFetching,
+              errorMessage: storeViewModel.errorMessage,
+              data: storeViewModel.filteredStores,
+              onRetry: () {
+                storeViewModel.getStores();
+              },
+              builder: (storeList) {
+                if (storeList.isEmpty) {
+                  return const Center(
+                    child: Text('No stores found'),
+                  );
+                }
+
+                return ListView.builder(
+                  itemCount: storeList.length,
+                  itemBuilder: (context, index) {
+                    final store = storeList[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 16.0),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.all(16.0),
+                        leading: CircleAvatar(
+                          backgroundImage: store.image.url.isNotEmpty
+                              ? NetworkImage(store.image.url)
+                              : null,
+                          child: store.image.url.isEmpty
+                              ? Text(store.name[0].toUpperCase())
+                              : null,
+                        ),
+                        title: Text(
+                          store.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(
+                          store.shortDescription,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit),
+                              onPressed: () {
+                                // Set selected store and navigate to edit page
+                                storeViewModel.selectStore(store);
+                                // Navigate to edit page
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.delete,
+                                color: Colors.red,
+                              ),
+                              onPressed: () {
+                                _showDeleteConfirmation(context, store);
+                              },
+                            ),
+                          ],
+                        ),
+                        isThreeLine: true,
+                      ),
+                    );
+                  },
+                );
+              },
+            );
           },
         ),
       ),
-      body: Selector<StoreViewModel, Data?>(
-        selector: (_, storeViewModel) => storeViewModel.selectedStore,
-        builder: (context, selectedStore, child) {
-          return selectedStore == null
-              ? _buildStoreListView(context)
-              : _buildEditStoreForm(context);
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context, Data store) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Store'),
+        content: Text('Are you sure you want to delete ${store.name}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Provider.of<StoreViewModel>(context, listen: false)
+                  .deleteStore(store.id);
+            },
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class StoreSearchDelegate extends SearchDelegate {
+  final StoreViewModel storeViewModel;
+
+  StoreSearchDelegate(this.storeViewModel);
+
+  @override
+  List<Widget> buildActions(BuildContext context) {
+    return [
+      IconButton(
+        icon: const Icon(Icons.clear),
+        onPressed: () {
+          query = '';
         },
       ),
+    ];
+  }
+
+  @override
+  Widget buildLeading(BuildContext context) {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back),
+      onPressed: () {
+        close(context, null);
+      },
     );
   }
 
-  /// Build Store List View
-  Widget _buildStoreListView(BuildContext context) {
-    return Column(
-      children: [
-        // 🔹 Search Bar
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: TextFormField(
-            decoration: InputDecoration(
-              labelText: 'Search Stores',
-              prefixIcon: const Icon(Icons.search),
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            onChanged: (value) {
-              Provider.of<StoreViewModel>(context, listen: false)
-                  .searchStores(value);
-            },
-          ),
-        ),
-
-        // 🔹 Store List
-        Expanded(
-          child: Consumer<StoreViewModel>(
-            builder: (context, storeViewModel, child) {
-              if (storeViewModel.isFetching) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              if (storeViewModel.filteredStores.isEmpty) {
-                return const Center(
-                    child: Text(
-                        'No stores found')); //  Fix: Show message correctly
-              }
-
-              return ListView.builder(
-                itemCount: storeViewModel.filteredStores.length,
-                itemBuilder: (context, index) {
-                  final store = storeViewModel.filteredStores[index];
-
-                  return GestureDetector(
-                    onTap: () {
-                      Provider.of<StoreViewModel>(context, listen: false)
-                          .selectStore(store); // Store selection using Provider
-                    },
-                    child: StoreListItem(store: store),
-                  );
-                },
-              );
-            },
-          ),
-        ),
-      ],
-    );
+  @override
+  Widget buildResults(BuildContext context) {
+    storeViewModel.searchStores(query);
+    return _buildSearchResults();
   }
 
-  /// Build Store Form for Editing
-  Widget _buildEditStoreForm(BuildContext context) {
-    final storeViewModel = Provider.of<StoreViewModel>(context);
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    storeViewModel.searchStores(query);
+    return _buildSearchResults();
+  }
 
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: StoreFormWidget(store: storeViewModel.selectedStore),
+  Widget _buildSearchResults() {
+    final filteredStores = storeViewModel.filteredStores;
+
+    return ListView.builder(
+      itemCount: filteredStores.length,
+      itemBuilder: (context, index) {
+        final store = filteredStores[index];
+        return ListTile(
+          leading: CircleAvatar(
+            backgroundImage: store.image.url.isNotEmpty
+                ? NetworkImage(store.image.url)
+                : null,
+            child: store.image.url.isEmpty
+                ? Text(store.name[0].toUpperCase())
+                : null,
+          ),
+          title: Text(store.name),
+          subtitle: Text(
+            store.shortDescription,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          onTap: () {
+            close(context, store);
+          },
+        );
+      },
     );
   }
 }

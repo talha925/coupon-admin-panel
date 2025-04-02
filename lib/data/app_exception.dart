@@ -12,7 +12,7 @@ class AppException implements Exception {
   // Returns a string representation of the exception
   @override
   String toString() {
-    return "$_message $_prefix";
+    return "$_prefix: $_message";
   }
 }
 
@@ -26,12 +26,30 @@ class FetchDataException extends AppException {
 // Exception thrown for invalid requests, such as incorrect parameters
 class BadRequestException extends AppException {
   // Constructor with a default message prefix for bad requests
-  BadRequestException([String? message]) : super(message, "Invalid request ");
+  BadRequestException([String? message]) : super(message, "Invalid request");
 }
 
 // Exception thrown for unauthorized requests, such as authentication failures
-class UnathorisedException extends AppException {
+class UnauthorizedException extends AppException {
   // Constructor with a default message prefix for unauthorized requests
-  UnathorisedException([String? message])
+  UnauthorizedException([String? message])
       : super(message, "Unauthorized request");
+}
+
+// Keeping for backward compatibility - use UnauthorizedException instead
+@Deprecated('Use UnauthorizedException instead')
+class UnathorisedException extends UnauthorizedException {
+  UnathorisedException([String? message]) : super(message);
+}
+
+// Exception thrown when a resource is not found
+class NotFoundException extends AppException {
+  // Constructor with a default message prefix for not found errors
+  NotFoundException([String? message]) : super(message, "Resource not found");
+}
+
+// Exception thrown when a request times out
+class TimeoutException extends AppException {
+  // Constructor with a default message prefix for timeouts
+  TimeoutException([String? message]) : super(message, "Request timeout");
 }

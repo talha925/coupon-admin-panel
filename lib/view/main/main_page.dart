@@ -4,6 +4,9 @@ import 'package:coupon_admin_panel/view/home/widget/drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:coupon_admin_panel/view_model/admin_view_model.dart';
+import 'package:coupon_admin_panel/view_model/store_view_model/store_view_model.dart';
+import 'package:coupon_admin_panel/view/store/widget/storeForm/store_form.dart';
+import 'package:coupon_admin_panel/view/coupon/widget/coupon_list_item/coupon_list_page.dart';
 
 import '../category/category_screen.dart';
 import '../store/store_page.dart';
@@ -14,16 +17,18 @@ class MainPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final adminViewModel = Provider.of<AdminViewModel>(context);
-
     return Scaffold(
       body: Row(
         children: [
           const DrawerWidget(), // Fixed Drawer on the left
           Expanded(
-              child: _buildPageContent(
-                  adminViewModel.currentPage) // Main content on the right
-              ),
+            child: Selector<AdminViewModel, AdminPage>(
+              selector: (_, viewModel) => viewModel.currentPage,
+              builder: (context, currentPage, child) {
+                return _buildPageContent(currentPage);
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -42,7 +47,7 @@ class MainPage extends StatelessWidget {
       case AdminPage.addCoupon:
         return const CreateCouponPage();
       case AdminPage.updateCoupon:
-        return const UpdateCouponPage();
+      return const CouponListPage();  // Ensure this is correctly added
       case AdminPage.addStore:
         return const CreateStorePage();
       case AdminPage.allStore:
@@ -64,7 +69,7 @@ class updateCategory extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Coupon Page'));
+    return const Center(child: Text('Category Update Page'));
   }
 }
 
@@ -73,7 +78,7 @@ class AddCategoryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Users Page'));
+    return const Center(child: Text('Add Category Page'));
   }
 }
 
@@ -82,7 +87,7 @@ class AddStorePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Coupon Page'));
+    return const Center(child: Text('Add Store Page'));
   }
 }
 
@@ -91,7 +96,7 @@ class UpdateCategoryPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Users Page'));
+    return const Center(child: Text('Update Category Page'));
   }
 }
 
@@ -123,7 +128,86 @@ class UpdateStorePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Users Page'));
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Update Store'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            // Navigate back to store list
+            Provider.of<AdminViewModel>(context, listen: false)
+                .selectPage(AdminPage.allStore);
+          },
+        ),
+      ),
+      body: Consumer<StoreViewModel>(
+        builder: (context, storeViewModel, _) {
+          final selectedStore = storeViewModel.selectedStore;
+
+          if (selectedStore == null) {
+            // If no store is selected, show an error message and return to list
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('No store selected for editing'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+              Provider.of<AdminViewModel>(context, listen: false)
+                  .selectPage(AdminPage.allStore);
+            });
+
+            return const Center(
+              child: Text('No store selected'),
+            );
+          }
+
+          // Show loading indicator if submitting
+          if (storeViewModel.isSubmitting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          // Show error message if there is one
+          if (storeViewModel.errorMessage != null &&
+              storeViewModel.errorMessage!.isNotEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    storeViewModel.errorMessage!,
+                    style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      Provider.of<AdminViewModel>(context, listen: false)
+                          .selectPage(AdminPage.allStore);
+                    },
+                    child: const Text('Back to Stores'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          // Show the form with the selected store data
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Use the existing StoreFormWidget with the selected store
+                StoreFormWidget(store: selectedStore),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 }
 

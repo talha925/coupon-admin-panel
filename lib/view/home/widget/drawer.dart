@@ -55,6 +55,8 @@ class DrawerWidget extends StatelessWidget {
             icon: Icons.category,
             title: "Categories",
             options: [
+              _buildSubListTile(context, "All Categories", AdminPage.category,
+                  adminViewModel),
               _buildSubListTile(context, "Add Category", AdminPage.addCategory,
                   adminViewModel),
               _buildSubListTile(context, "Update Category",

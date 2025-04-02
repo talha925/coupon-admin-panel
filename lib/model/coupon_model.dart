@@ -11,88 +11,99 @@ String couponModelToJson(CouponModel data) => json.encode(data.toJson());
 
 class CouponModel {
   String status;
-  List<Datum> data;
+  List<CouponData> data;
+  Metadata metadata;
 
   CouponModel({
     required this.status,
     required this.data,
+    required this.metadata,
   });
 
   factory CouponModel.fromJson(Map<String, dynamic> json) => CouponModel(
         status: json["status"],
-        data: List<Datum>.from(json["data"].map((x) => Datum.fromJson(x))),
+        data: List<CouponData>.from(
+            json["data"].map((x) => CouponData.fromJson(x))),
+        metadata: Metadata.fromJson(json["metadata"]),
       );
 
   Map<String, dynamic> toJson() => {
         "status": status,
         "data": List<dynamic>.from(data.map((x) => x.toJson())),
+        "metadata": metadata.toJson(),
       };
 }
 
-class Datum {
+class CouponData {
   String id;
+  String offerDetails;
   String code;
-  String description;
-  int discount;
-  DateTime expirationDate;
-  Store store;
-  String affiliateLink;
-  int v;
+  bool active;
+  bool isValid;
+  bool featuredForHome;
+  int hits;
+  DateTime? lastAccessed;
+  String storeId;
 
-  Datum({
+  CouponData({
     required this.id,
+    required this.offerDetails,
     required this.code,
-    required this.description,
-    required this.discount,
-    required this.expirationDate,
-    required this.store,
-    required this.affiliateLink,
-    required this.v,
+    required this.active,
+    required this.isValid,
+    required this.featuredForHome,
+    required this.hits,
+    required this.lastAccessed,
+    required this.storeId,
   });
 
-  factory Datum.fromJson(Map<String, dynamic> json) => Datum(
+  factory CouponData.fromJson(Map<String, dynamic> json) => CouponData(
         id: json["_id"],
+        offerDetails: json["offerDetails"],
         code: json["code"],
-        description: json["description"],
-        discount: json["discount"],
-        expirationDate: DateTime.parse(json["expirationDate"]),
-        store: Store.fromJson(json["store"]),
-        affiliateLink: json["affiliateLink"],
-        v: json["__v"],
+        active: json["active"],
+        isValid: json["isValid"],
+        featuredForHome: json["featuredForHome"],
+        hits: json["hits"],
+        lastAccessed: json["lastAccessed"] == null
+            ? null
+            : DateTime.parse(json["lastAccessed"]),
+        storeId: json["storeId"],
       );
 
   Map<String, dynamic> toJson() => {
         "_id": id,
+        "offerDetails": offerDetails,
         "code": code,
-        "description": description,
-        "discount": discount,
-        "expirationDate": expirationDate.toIso8601String(),
-        "store": store.toJson(),
-        "affiliateLink": affiliateLink,
-        "__v": v,
+        "active": active,
+        "isValid": isValid,
+        "featuredForHome": featuredForHome,
+        "hits": hits,
+        "lastAccessed": lastAccessed?.toIso8601String(),
+        "storeId": storeId,
       };
 }
 
-class Store {
-  String id;
-  String name;
-  String image;
+class Metadata {
+  int totalCoupons;
+  int currentPage;
+  int totalPages;
 
-  Store({
-    required this.id,
-    required this.name,
-    required this.image,
+  Metadata({
+    required this.totalCoupons,
+    required this.currentPage,
+    required this.totalPages,
   });
 
-  factory Store.fromJson(Map<String, dynamic> json) => Store(
-        id: json["_id"],
-        name: json["name"],
-        image: json["image"],
+  factory Metadata.fromJson(Map<String, dynamic> json) => Metadata(
+        totalCoupons: json["totalCoupons"],
+        currentPage: json["currentPage"],
+        totalPages: json["totalPages"],
       );
 
   Map<String, dynamic> toJson() => {
-        "_id": id,
-        "name": name,
-        "image": image,
+        "totalCoupons": totalCoupons,
+        "currentPage": currentPage,
+        "totalPages": totalPages,
       };
 }

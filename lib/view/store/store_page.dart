@@ -2,37 +2,60 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:coupon_admin_panel/view/store/widget/storeForm/store_form.dart';
 import 'package:coupon_admin_panel/view_model/store_view_model/store_view_model.dart';
+import 'package:coupon_admin_panel/view/widgets/error_widget.dart';
 
 class CreateStorePage extends StatelessWidget {
   const CreateStorePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    print("CreateStorePage ");
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Create Store'),
+      ),
       body: Consumer<StoreViewModel>(
-        builder: (context, storeViewModel, child) {
-          return const Column(
+        builder: (context, storeViewModel, _) {
+          return Column(
             children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  // ✅ Ensure scrolling prevents layout overflow
-                  child: Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        StoreFormWidget(), // ✅ Form is now scrollable
-                        // const SizedBox(height: 16.0),
-                      ],
-                    ),
+              // Error message display
+              if (storeViewModel.errorMessage != null &&
+                  storeViewModel.errorMessage!.isNotEmpty)
+                Container(
+                  width: double.infinity,
+                  color: Colors.red.shade100,
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    storeViewModel.errorMessage!,
+                    style: const TextStyle(color: Colors.red),
                   ),
                 ),
+
+              // Main content
+              Expanded(
+                child: Stack(
+                  children: [
+                    // Form
+                    SingleChildScrollView(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          StoreFormWidget(),
+                        ],
+                      ),
+                    ),
+
+                    // Loading overlay
+                    if (storeViewModel.isSubmitting)
+                      Container(
+                        color: Colors.black.withOpacity(0.3),
+                        child: const Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-              // Expanded(
-              //   child:
-              //       StoreListPage(), // ✅ Store list now takes remaining space
-              // ),
             ],
           );
         },

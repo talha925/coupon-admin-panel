@@ -1,14 +1,5 @@
-//
-//     final storeModel = storeModelFromJson(jsonString);
-
-import 'dart:convert';
-
-import 'category_model.dart';
-
-StoreModel storeModelFromJson(String str) =>
-    StoreModel.fromJson(json.decode(str));
-
-String storeModelToJson(StoreModel data) => json.encode(data.toJson());
+// Import CategoryData from category_model.dart instead of redefining it
+import 'package:coupon_admin_panel/model/category_model.dart';
 
 class StoreModel {
   String status;
@@ -37,7 +28,7 @@ class Data {
   String shortDescription;
   String longDescription;
   StoreImage image;
-  List<CategoryData> categories;
+  List<CategoryData> categories; // Use CategoryData from category_model.dart
   Seo seo;
   String language;
   String id;
@@ -47,7 +38,8 @@ class Data {
   int v;
   bool isTopStore;
   bool isEditorsChoice;
-  String heading; // ✅ New field
+  String heading;
+
   Data({
     required this.name,
     required this.directUrl,
@@ -55,7 +47,7 @@ class Data {
     required this.shortDescription,
     required this.longDescription,
     required this.image,
-    required this.categories,
+    required this.categories, // List of CategoryData
     required this.seo,
     required this.language,
     required this.id,
@@ -65,7 +57,7 @@ class Data {
     required this.v,
     required this.isTopStore,
     required this.isEditorsChoice,
-    required this.heading, // ✅ Include heading
+    required this.heading,
   });
 
   factory Data.fromJson(Map<String, dynamic> json) => Data(
@@ -75,11 +67,10 @@ class Data {
         shortDescription: json["short_description"],
         longDescription: json["long_description"],
         image: StoreImage.fromJson(json["image"]),
-        // ✅ Fix categories parsing (Convert List<String> → List<CategoryData>)
         categories: (json["categories"] as List<dynamic>).map((x) {
           return x is String
-              ? CategoryData(id: x, name: '')
-              : CategoryData.fromJson(x);
+              ? CategoryData(id: x, name: '') // Handle if category is a string
+              : CategoryData.fromJson(x); // Otherwise, parse as CategoryData
         }).toList(),
         seo: Seo.fromJson(json["seo"]),
         language: json["language"],
@@ -100,22 +91,20 @@ class Data {
         "short_description": shortDescription,
         "long_description": longDescription,
         "image": image.toJson(),
-        "categories": categories
-            .map((x) => x.toJson())
-            .toList(), // ✅ Ensure categories serialize correctly
+        "categories": categories.map((x) => x.toJson()).toList(),
         "seo": seo.toJson(),
         "language": language,
         "_id": id,
         "createdAt": createdAt.toIso8601String(),
         "updatedAt": updatedAt.toIso8601String(),
         "slug": slug,
-        "__v": v, "isTopStore": isTopStore,
+        "__v": v,
+        "isTopStore": isTopStore,
         "isEditorsChoice": isEditorsChoice,
         "heading": heading,
       };
 }
 
-// ✅ Fixed `StoreImage` class name conflict
 class StoreImage {
   String url;
   String alt;

@@ -2,6 +2,12 @@ class AppUrl {
   // static const String baseUrl = "https://coupon-app-backend.vercel.app/api";
   static const String baseUrl = "http://localhost:5000/api";
 
+  // Auth URLs
+  static const String loginUrl = "$baseUrl/auth/login";
+  static const String registerUrl = "$baseUrl/auth/register";
+  static const String refreshTokenUrl = "$baseUrl/auth/refresh";
+  static const String logoutUrl = "$baseUrl/auth/logout";
+
   // Store URLs
   static const String createStoreUrl = "$baseUrl/stores";
   static const String getStoresUrl = "$baseUrl/stores";

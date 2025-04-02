@@ -30,12 +30,12 @@ class CreateCouponPage extends StatelessWidget {
               SliverToBoxAdapter(
                 child: SizedBox(height: 16.0),
               ),
-              SliverFillRemaining(
-                child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: CouponListPage(),
-                ),
-              ),
+              // SliverFillRemaining(
+              //   child: Padding(
+              //     padding: EdgeInsets.all(16.0),
+              //     child: CouponListPage(),
+              //   ),
+              // ),
             ],
           );
         },

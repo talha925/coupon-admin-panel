@@ -1,6 +1,7 @@
 import 'package:coupon_admin_panel/repository/store_repository.dart';
 import 'package:flutter/foundation.dart';
 import 'package:coupon_admin_panel/model/store_model.dart';
+import 'package:dio/dio.dart';
 
 class StoreViewModel with ChangeNotifier {
   final StoreRepository _storeRepository = StoreRepository();
@@ -33,13 +34,11 @@ class StoreViewModel with ChangeNotifier {
   // 🔹 Toggle Functions
   void toggleTopStore(bool value) {
     _isTopStore = value;
-    print("🔄 Updated isTopStore: $_isTopStore");
     notifyListeners();
   }
 
   void toggleEditorsChoice(bool value) {
     _isEditorsChoice = value;
-    print("🔄 Updated isEditorsChoice: $_isEditorsChoice");
     notifyListeners();
   }
 
@@ -57,21 +56,19 @@ class StoreViewModel with ChangeNotifier {
 
   // Fetch stores from repository
   Future<void> getStores() async {
-    if (_stores.isNotEmpty || _isFetching) return;
+    // Step 1: Check if already loaded
+    if (_stores.isNotEmpty) {
+      return; // stores already loaded, no need to fetch again
+    }
 
     _isFetching = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
       final List<Data> fetchedStores = await _storeRepository.fetchStores();
       _stores = fetchedStores;
-      _filteredStores =
-          List.from(_stores); // Ensure filteredStores is initialized
-      _errorMessage = null;
-
-      if (kDebugMode) {
-        print('Stores fetched successfully: ${_stores.length}');
-      }
+      _filteredStores = List.from(_stores);
     } catch (e) {
       _errorMessage = 'Error fetching stores: ${e.toString()}';
       if (kDebugMode) {
@@ -83,24 +80,41 @@ class StoreViewModel with ChangeNotifier {
     }
   }
 
-  // 🔹 Search Stores Method
+  // Filter stores based on search query
+  void filterStores(String query) {
+    if (query.isEmpty) {
+      _filteredStores = List.from(_stores);
+    } else {
+      final lowercaseQuery = query.toLowerCase();
+      _filteredStores = _stores.where((store) {
+        return store.name.toLowerCase().contains(lowercaseQuery) ||
+            store.shortDescription.toLowerCase().contains(lowercaseQuery);
+      }).toList();
+    }
+    notifyListeners();
+  }
+
+  // Search stores by name or description
   void searchStores(String query) {
     if (query.isEmpty) {
-      _filteredStores = _stores; // Reset to full list
+      _filteredStores = List.from(_stores);
     } else {
-      _filteredStores = _stores
-          .where(
-              (store) => store.name.toLowerCase().contains(query.toLowerCase()))
-          .toList();
+      final lowercaseQuery = query.toLowerCase();
+      _filteredStores = _stores.where((store) {
+        return store.name.toLowerCase().contains(lowercaseQuery) ||
+            store.shortDescription.toLowerCase().contains(lowercaseQuery) ||
+            store.longDescription.toLowerCase().contains(lowercaseQuery);
+      }).toList();
     }
     notifyListeners();
   }
 
   // Create a new store
-  Future<void> createStore(Data store) async {
-    if (_isSubmitting) return;
+  Future<bool> createStore(Data store) async {
+    if (_isSubmitting) return false;
 
     _isSubmitting = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
@@ -117,21 +131,28 @@ class StoreViewModel with ChangeNotifier {
           response['data']['_id'].isNotEmpty) {
         final newStore = Data.fromJson(response['data']);
         _stores.add(newStore);
-        _filteredStores = _stores;
+        _filteredStores =
+            List.from(_stores); // Create a new list to avoid reference issues
         _errorMessage = null;
-        print("Server Response: $response"); // ✅ Print server response
 
         if (kDebugMode) {
+          print("Server Response: $response");
           print("Store created successfully: ${newStore.id}");
         }
+        return true;
       } else {
-        throw Exception('Store ID not found in the response or empty');
+        _errorMessage = 'Invalid server response: Store ID not found or empty';
+        if (kDebugMode) {
+          print("Invalid server response: $response");
+        }
+        return false;
       }
     } catch (e) {
       _errorMessage = 'Error creating store: ${e.toString()}';
       if (kDebugMode) {
         print(_errorMessage);
       }
+      return false;
     } finally {
       _isSubmitting = false;
       notifyListeners();
@@ -166,10 +187,11 @@ class StoreViewModel with ChangeNotifier {
   }
 
   // Update a store
-  Future<void> updateStore(Data store) async {
-    if (_isSubmitting) return;
+  Future<bool> updateStore(Data store) async {
+    if (_isSubmitting) return false;
 
     _isSubmitting = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
@@ -177,19 +199,27 @@ class StoreViewModel with ChangeNotifier {
       final index = _stores.indexWhere((s) => s.id == store.id);
       if (index != -1) {
         _stores[index] = store;
-        _filteredStores = _stores;
+        _filteredStores =
+            List.from(_stores); // Create a new list to avoid reference issues
+        _errorMessage = null;
+
         if (kDebugMode) {
           print('Store updated successfully');
         }
+        return true;
       } else {
-        throw Exception('Store not found');
+        _errorMessage = 'Store not found in the list';
+        if (kDebugMode) {
+          print(_errorMessage);
+        }
+        return false;
       }
-      _errorMessage = null;
     } catch (e) {
       _errorMessage = 'Error updating store: ${e.toString()}';
       if (kDebugMode) {
         print(_errorMessage);
       }
+      return false;
     } finally {
       _isSubmitting = false;
       notifyListeners();
@@ -200,6 +230,8 @@ class StoreViewModel with ChangeNotifier {
   void dispose() {
     _stores.clear();
     _filteredStores.clear();
+    _selectedStore = null;
+    _errorMessage = null;
     super.dispose();
   }
 }
