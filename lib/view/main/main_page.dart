@@ -47,7 +47,7 @@ class MainPage extends StatelessWidget {
       case AdminPage.addCoupon:
         return const CreateCouponPage();
       case AdminPage.updateCoupon:
-      return const CouponListPage();  // Ensure this is correctly added
+        return const CouponListByStorePage(); // Ensure this is correctly added
       case AdminPage.addStore:
         return const CreateStorePage();
       case AdminPage.allStore:

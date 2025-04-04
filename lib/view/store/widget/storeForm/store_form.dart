@@ -24,7 +24,6 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
   late TextEditingController nameController;
   late TextEditingController shortDescriptionController;
   late TextEditingController longDescriptionController;
-  late TextEditingController directUrlController;
   late TextEditingController trackingUrlController;
   late TextEditingController metaTitleController;
   late TextEditingController metaDescriptionController;
@@ -34,7 +33,6 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
   late FocusNode nameFocusNode;
   late FocusNode shortDescriptionFocusNode;
   late FocusNode longDescriptionFocusNode;
-  late FocusNode directUrlFocusNode;
   late FocusNode trackingUrlFocusNode;
   late FocusNode metaTitleFocusNode;
   late FocusNode metaDescriptionFocusNode;
@@ -61,8 +59,6 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
         TextEditingController(text: widget.store?.shortDescription ?? '');
     longDescriptionController =
         TextEditingController(text: widget.store?.longDescription ?? '');
-    directUrlController =
-        TextEditingController(text: widget.store?.directUrl ?? '');
     trackingUrlController =
         TextEditingController(text: widget.store?.trackingUrl ?? '');
     metaTitleController =
@@ -75,7 +71,6 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
     nameFocusNode = FocusNode();
     shortDescriptionFocusNode = FocusNode();
     longDescriptionFocusNode = FocusNode();
-    directUrlFocusNode = FocusNode();
     trackingUrlFocusNode = FocusNode();
     metaTitleFocusNode = FocusNode();
     metaDescriptionFocusNode = FocusNode();
@@ -100,7 +95,6 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
     nameController.dispose();
     shortDescriptionController.dispose();
     longDescriptionController.dispose();
-    directUrlController.dispose();
     trackingUrlController.dispose();
     metaTitleController.dispose();
     metaDescriptionController.dispose();
@@ -110,7 +104,6 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
     nameFocusNode.dispose();
     shortDescriptionFocusNode.dispose();
     longDescriptionFocusNode.dispose();
-    directUrlFocusNode.dispose();
     trackingUrlFocusNode.dispose();
     metaTitleFocusNode.dispose();
     metaDescriptionFocusNode.dispose();
@@ -139,7 +132,6 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
                 nameController: nameController,
                 shortDescriptionController: shortDescriptionController,
                 longDescriptionController: longDescriptionController,
-                directUrlController: directUrlController,
                 trackingUrlController: trackingUrlController,
                 metaTitleController: metaTitleController,
                 metaDescriptionController: metaDescriptionController,
@@ -147,7 +139,6 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
                 nameFocusNode: nameFocusNode,
                 shortDescriptionFocusNode: shortDescriptionFocusNode,
                 longDescriptionFocusNode: longDescriptionFocusNode,
-                directUrlFocusNode: directUrlFocusNode,
                 trackingUrlFocusNode: trackingUrlFocusNode,
                 metaTitleFocusNode: metaTitleFocusNode,
                 metaDescriptionFocusNode: metaDescriptionFocusNode,
@@ -170,7 +161,6 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
                 nameController: nameController,
                 shortDescriptionController: shortDescriptionController,
                 longDescriptionController: longDescriptionController,
-                directUrlController: directUrlController,
                 trackingUrlController: trackingUrlController,
                 metaTitleController: metaTitleController,
                 metaDescriptionController: metaDescriptionController,

@@ -1,171 +1,105 @@
+// ✅ Final Coupon Page UI using StoreModel with Searchable Store Dropdown
+
+import 'package:coupon_admin_panel/res/components/store_dropdown_search.dart';
+import 'package:coupon_admin_panel/view_model/coupon_view_model/coupon_view_model.dart';
+import 'package:coupon_admin_panel/view_model/store_view_model/store_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:coupon_admin_panel/view_model/coupon_view_model/coupon_view_model.dart';
+
 import 'widget/coupon_list_item.dart';
 import 'widget/update_coupon_dialog.dart';
-import 'package:coupon_admin_panel/view/widgets/error_widget.dart';
-import 'package:coupon_admin_panel/model/coupon_model.dart';
 
-extension CouponCopy on CouponData {
-  CouponData copyWith({
-    String? offerDetails,
-    String? code,
-    bool? active,
-    bool? featuredForHome,
-  }) {
-    return CouponData(
-      id: id,
-      offerDetails: offerDetails ?? this.offerDetails,
-      code: code ?? this.code,
-      active: active ?? this.active,
-      isValid: isValid,
-      featuredForHome: featuredForHome ?? this.featuredForHome,
-      hits: hits,
-      lastAccessed: lastAccessed,
-      storeId: storeId,
-    );
-  }
-}
-class CouponListPage extends StatefulWidget {
-  const CouponListPage({super.key});
+class CouponListByStorePage extends StatefulWidget {
+  const CouponListByStorePage({super.key});
 
   @override
-  CouponListPageState createState() => CouponListPageState();
+  State<CouponListByStorePage> createState() => _CouponListByStorePageState();
 }
 
-class CouponListPageState extends State<CouponListPage> {
-  final TextEditingController _searchController = TextEditingController();
+class _CouponListByStorePageState extends State<CouponListByStorePage> {
+  final ValueNotifier<String?> _selectedStoreId = ValueNotifier<String?>(null);
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        Provider.of<CouponViewModel>(context, listen: false).getCoupons();
-      }
+      final storeVM = Provider.of<StoreViewModel>(context, listen: false);
+      final couponVM = Provider.of<CouponViewModel>(context, listen: false);
+      storeVM.getStores();
+      couponVM.getCoupons();
     });
   }
 
   @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final storeVM = Provider.of<StoreViewModel>(context);
+    final couponVM = Provider.of<CouponViewModel>(context);
+
     return SafeArea(
       child: Scaffold(
+        appBar: AppBar(title: const Text('Coupons by Store')),
         body: Column(
           children: [
-            // Search bar
-            Container(
+            Padding(
               padding: const EdgeInsets.all(8.0),
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  labelText: 'Search Coupons',
-                  hintText: 'Enter coupon code or description',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.clear),
-                    onPressed: () {
-                      _searchController.clear();
-                      Provider.of<CouponViewModel>(context, listen: false)
-                          .searchCoupons('');
-                    },
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
-                onChanged: (value) {
-                  Provider.of<CouponViewModel>(context, listen: false)
-                      .searchCoupons(value);
+              child: StoreSearchDropdown(
+                selectedStoreId: _selectedStoreId,
+                onChanged: (storeId) {
+                  final selectedStore = storeVM.stores.firstWhere(
+                    (store) => store.id == storeId,
+                    orElse: () => storeVM.stores.first,
+                  );
+                  storeVM.selectStore(selectedStore);
+                  couponVM.updateSelectedStore(storeId);
                 },
               ),
             ),
+            if (storeVM.selectedStore != null)
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Text('Coupons for: ${storeVM.selectedStore!.name}',
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
             Expanded(
-              child: Consumer<CouponViewModel>(
-                builder: (context, couponViewModel, child) {
-                  if (couponViewModel.isFetching) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  if (couponViewModel.errorMessage != null) {
-                    return ApiErrorWidget(
-                      errorMessage: couponViewModel.errorMessage!,
-                      onRetry: () => couponViewModel.getCoupons(),
-                    );
-                  }
-
-                  if (couponViewModel.filteredCoupons.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.local_offer_outlined, size: 64, color: Colors.grey),
-                          const SizedBox(height: 16),
-                          Text(
-                            couponViewModel.coupons.isEmpty
-                                ? 'No coupons available'
-                                : 'No coupons match your search',
-                            style: const TextStyle(fontSize: 18, color: Colors.grey),
-                          ),
-                          if (couponViewModel.coupons.isNotEmpty)
-                            TextButton(
-                              onPressed: () {
-                                _searchController.clear();
-                                couponViewModel.searchCoupons('');
-                              },
-                              child: const Text('Clear Search'),
-                            ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  return ListView.builder(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    itemCount: couponViewModel.filteredCoupons.length,
-                    itemBuilder: (context, index) {
-                      final coupon = couponViewModel.filteredCoupons[index];
-                      return CouponListItem(
-                        coupon: coupon,
-                        onDelete: () {
-                          couponViewModel.deleteCoupon(coupon.id);
-                        },
-                        onUpdate: () {
-                          couponViewModel.selectCoupon(coupon);
-                          showDialog(
-                            context: context,
-                            builder: (context) => UpdateCouponDialog(
+              child: couponVM.isFetching
+                  ? const Center(child: CircularProgressIndicator())
+                  : couponVM.filteredCoupons.isEmpty
+                      ? const Center(
+                          child: Text('No coupons available for this store'))
+                      : ListView.builder(
+                          itemCount: couponVM.filteredCoupons.length,
+                          itemBuilder: (context, index) {
+                            final coupon = couponVM.filteredCoupons[index];
+                            return CouponListItem(
                               coupon: coupon,
-                              onUpdate: (updatedData) {
-                                Provider.of<CouponViewModel>(context, listen: false)
-                                    .updateCoupon(
-                                  coupon.copyWith(
-                                    offerDetails: updatedData['offerDetails'],
-                                    code: updatedData['code'],
-                                    active: updatedData['active'],
-                                    featuredForHome: updatedData['featuredForHome'],
+                              onDelete: () => couponVM.deleteCoupon(coupon.id),
+                              onUpdate: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (_) => UpdateCouponDialog(
+                                    coupon: coupon,
+                                    onUpdate: (updatedData) {
+                                      final updatedCoupon = coupon.copyWith(
+                                        offerDetails:
+                                            updatedData['offerDetails'],
+                                        code: updatedData['code'],
+                                        active: updatedData['active'],
+                                        featuredForHome:
+                                            updatedData['featuredForHome'],
+                                      );
+                                      couponVM.updateCoupon(updatedCoupon);
+                                    },
                                   ),
                                 );
                               },
-                            ),
-                          );
-                        },
-                        onToggleActive: () {
-                          couponViewModel.toggleCouponActiveStatus(coupon.id);
-                        },
-                        onToggleFeatured: () {
-                          couponViewModel.toggleCouponFeaturedStatus(coupon.id);
-                        },
-                      );
-                    },
-                  );
-                },
-              ),
+                              onToggleActive: () =>
+                                  couponVM.toggleCouponActiveStatus(coupon.id),
+                              onToggleFeatured: () => couponVM
+                                  .toggleCouponFeaturedStatus(coupon.id),
+                            );
+                          },
+                        ),
             ),
           ],
         ),

@@ -7,13 +7,13 @@ import 'package:coupon_admin_panel/view_model/store_view_model/store_view_model.
 import 'package:coupon_admin_panel/view_model/services/image_picker_view_model_web.dart';
 import 'package:coupon_admin_panel/model/store_model.dart';
 import 'package:coupon_admin_panel/utils/utils.dart';
+import 'package:coupon_admin_panel/utils/form_util.dart';
 
 class StoreFormButton extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final TextEditingController nameController;
   final TextEditingController shortDescriptionController;
   final TextEditingController longDescriptionController;
-  final TextEditingController directUrlController;
   final TextEditingController trackingUrlController;
   final TextEditingController metaTitleController;
   final TextEditingController metaDescriptionController;
@@ -23,9 +23,8 @@ class StoreFormButton extends StatelessWidget {
   final bool topStore;
   final bool editorsChoice;
   final String language;
-  final Data? store; // ✅ Store for editing mode
+  final Data? store;
 
-  // ✅ Using ValueNotifier to track submitting state
   final ValueNotifier<bool> isSubmitting = ValueNotifier(false);
 
   StoreFormButton({
@@ -34,7 +33,6 @@ class StoreFormButton extends StatelessWidget {
     required this.nameController,
     required this.shortDescriptionController,
     required this.longDescriptionController,
-    required this.directUrlController,
     required this.trackingUrlController,
     required this.metaTitleController,
     required this.metaDescriptionController,
@@ -70,104 +68,99 @@ class StoreFormButton extends StatelessWidget {
 
   Future<void> _submitStore(
       BuildContext context, StoreViewModel storeViewModel) async {
+    // First validate the form using the built-in validators
     if (!formKey.currentState!.validate()) {
-      Utils.toastMessage('Please fill in all required fields.');
+      Utils.toastMessage('Please fix validation errors in the form.');
       return;
     }
 
-    // Show loading state
     isSubmitting.value = true;
-    final ScaffoldMessengerState scaffoldMessenger =
-        ScaffoldMessenger.of(context);
-
-    final imagePickerViewModel =
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+    final imagePickerVM =
         Provider.of<ImagePickerViewModel>(context, listen: false);
-
-    String? uploadedImageUrl = store?.image.url; // Keep existing image
+    String? uploadedImageUrl = store?.image.url;
 
     try {
-      // Handle image upload if needed
-      if (imagePickerViewModel.selectedImageBytes != null) {
-        try {
-          scaffoldMessenger.showSnackBar(
-            const SnackBar(
-              content: Text('Uploading image...'),
-              duration: Duration(seconds: 2),
-            ),
-          );
+      // Log validation info to help debug URL validation issues
+      Map<String, dynamic> storeData = {
+        'trackingUrl': trackingUrlController.text.trim(),
+        'heading': storeViewModel.selectedHeading,
+      };
+      FormUtils.logValidationInfo(storeData);
 
-          uploadedImageUrl = await imagePickerViewModel.uploadImageToS3();
+      // Upload image if one is selected
+      if (imagePickerVM.selectedImageBytes != null) {
+        scaffoldMessenger.showSnackBar(
+          const SnackBar(content: Text('Uploading image...')),
+        );
 
-          if (uploadedImageUrl == null || uploadedImageUrl.isEmpty) {
-            throw Exception('Failed to upload image');
-          }
-        } catch (e) {
-          scaffoldMessenger.hideCurrentSnackBar();
-          scaffoldMessenger.showSnackBar(
-            SnackBar(
-              content: Text('Image upload failed: ${e.toString()}'),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 3),
-            ),
-          );
-          isSubmitting.value = false;
-          return;
+        uploadedImageUrl = await imagePickerVM.uploadImageToS3();
+        if (uploadedImageUrl == null || uploadedImageUrl.isEmpty) {
+          throw Exception('Image upload failed.');
         }
+
+        scaffoldMessenger.hideCurrentSnackBar();
       }
 
-      // Get selected heading from StoreViewModel
-      String selectedHeading =
-          storeViewModel.selectedHeading ?? 'Coupons & Promo Codes';
+      final selectedHeading = storeViewModel.selectedHeading;
 
-      // Get latest toggle values from UI before sending
-      final bool finalTopStore = storeViewModel.isTopStore;
-      final bool finalEditorsChoice = storeViewModel.isEditorsChoice;
+      // Additional validation using FormUtils
+      String? trackingUrlError =
+          FormUtils.validateWebsite(trackingUrlController.text.trim());
+      if (trackingUrlError != null) {
+        _showError(scaffoldMessenger, 'Tracking URL Error: $trackingUrlError');
+        return;
+      }
 
-      // Create store data object
-      final storeData = Data(
+      String? headingError = FormUtils.validateHeading(selectedHeading);
+      if (headingError != null) {
+        _showError(scaffoldMessenger, headingError);
+        return;
+      }
+
+      // Double check that the heading is one of the explicitly allowed values
+      if (!FormUtils.ALLOWED_HEADINGS.contains(selectedHeading)) {
+        _showError(scaffoldMessenger,
+            'Invalid heading value. Please select one of the allowed options.');
+        return;
+      }
+
+      if (uploadedImageUrl == null || uploadedImageUrl.isEmpty) {
+        _showError(scaffoldMessenger, 'Store image is required.');
+        return;
+      }
+
+      final storeDataObj = Data(
         id: store?.id ?? '',
         name: nameController.text.trim(),
-        directUrl: directUrlController.text.trim(),
         trackingUrl: trackingUrlController.text.trim(),
+        shortDescription: shortDescriptionController.text.trim(),
+        longDescription: longDescriptionController.text.trim(),
         image: StoreImage(
-          url: uploadedImageUrl ?? '',
-          alt: imagePickerViewModel.selectedImageAlt?.trim() ??
-              'Default Alt Text',
+          url: uploadedImageUrl,
+          alt: imagePickerVM.selectedImageAlt?.trim() ?? 'Store Logo',
         ),
+        categories: selectedCategory != null
+            ? [CategoryData(id: selectedCategory!, name: '')]
+            : [],
         seo: Seo(
           metaTitle: metaTitleController.text.trim(),
           metaDescription: metaDescriptionController.text.trim(),
           metaKeywords: metaKeywordsController.text.trim(),
         ),
-        categories: selectedCategory != null
-            ? [CategoryData(id: selectedCategory!, name: '')]
-            : [],
         language: language,
-        createdAt: store?.createdAt ?? DateTime.now(),
-        updatedAt: DateTime.now(),
-        v: 0,
-        shortDescription: shortDescriptionController.text.trim(),
-        longDescription: longDescriptionController.text.trim(),
-        slug: nameController.text.trim().toLowerCase().replaceAll(' ', '-'),
-        isTopStore: finalTopStore,
-        isEditorsChoice: finalEditorsChoice,
-        heading: selectedHeading,
+        isTopStore: storeViewModel.isTopStore,
+        isEditorsChoice: storeViewModel.isEditorsChoice,
+        heading: selectedHeading!,
       );
 
-      // Submit data to API
       scaffoldMessenger.showSnackBar(
-        const SnackBar(
-          content: Text('Saving store...'),
-          duration: Duration(seconds: 2),
-        ),
+        const SnackBar(content: Text('Saving store...')),
       );
 
-      bool success = false;
-      if (store != null) {
-        success = await storeViewModel.updateStore(storeData);
-      } else {
-        success = await storeViewModel.createStore(storeData);
-      }
+      final success = store != null
+          ? await storeViewModel.updateStore(storeDataObj)
+          : await storeViewModel.createStore(storeDataObj);
 
       scaffoldMessenger.hideCurrentSnackBar();
 
@@ -178,69 +171,43 @@ class StoreFormButton extends StatelessWidget {
                 ? 'Store updated successfully!'
                 : 'Store created successfully!'),
             backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
           ),
         );
-
-        // Clear form on success
         _clearFormFields();
-        imagePickerViewModel.clearImage();
+        imagePickerVM.clearImage();
       } else {
-        // Show error message from view model
-        final errorMessage =
-            storeViewModel.errorMessage ?? 'Failed to save store data';
-        scaffoldMessenger.showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
-        );
+        _showError(
+            scaffoldMessenger,
+            storeViewModel.errorMessage ??
+                'Failed to save store. Please try again.');
       }
     } catch (e) {
       scaffoldMessenger.hideCurrentSnackBar();
-      scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 5),
-        ),
-      );
+      _showError(scaffoldMessenger, 'Unexpected error: ${e.toString()}');
     } finally {
       isSubmitting.value = false;
     }
   }
 
-  /// ✅ Clears all form input fields after successful submission
+  void _showError(ScaffoldMessengerState messenger, String message) {
+    isSubmitting.value = false;
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 5),
+      ),
+    );
+  }
+
   void _clearFormFields() {
     nameController.clear();
-    directUrlController.clear();
     trackingUrlController.clear();
     metaTitleController.clear();
     metaDescriptionController.clear();
     metaKeywordsController.clear();
     shortDescriptionController.clear();
     longDescriptionController.clear();
-  }
-
-  /// ✅ Separate validation logic
-  bool _validateFields(String? uploadedImageUrl, String? selectedHeading) {
-    if (nameController.text.trim().isEmpty) return false;
-    if (directUrlController.text.trim().isEmpty ||
-        !Uri.parse(directUrlController.text.trim()).isAbsolute) return false;
-    if (trackingUrlController.text.trim().isEmpty ||
-        !Uri.parse(trackingUrlController.text.trim()).isAbsolute) return false;
-    if (shortDescriptionController.text.trim().isEmpty) return false;
-    if (longDescriptionController.text.trim().isEmpty) return false;
-    if (uploadedImageUrl == null || uploadedImageUrl.isEmpty) return false;
-    if (selectedHeading == null ||
-        ![
-          'Promo Codes & Coupon',
-          'Coupons & Promo Codes',
-          'Voucher & Discount Codes'
-        ].contains(selectedHeading)) {
-      return false;
-    }
-    return true;
   }
 }

@@ -4,6 +4,7 @@ import 'package:coupon_admin_panel/data/network/base_api_services.dart';
 import 'package:coupon_admin_panel/data/network/network_api_services.dart';
 import 'package:coupon_admin_panel/model/store_model.dart';
 import 'package:coupon_admin_panel/res/app_url.dart';
+import 'package:coupon_admin_panel/utils/form_util.dart';
 import 'package:flutter/foundation.dart';
 
 class StoreRepository {
@@ -11,18 +12,21 @@ class StoreRepository {
 
   Future<dynamic> createStore(Map<String, dynamic> data) async {
     try {
+      // Clean the data before sending
+      final cleanedData = _cleanStoreData(data);
+
       if (kDebugMode) {
-        print("Sending data: $data to URL: ${AppUrl.createStoreUrl}");
-        print("Sending store data: ${jsonEncode(data)}");
+        print("Sending data: $cleanedData to URL: ${AppUrl.createStoreUrl}");
+        print("Sending store data: ${jsonEncode(cleanedData)}");
       }
 
       // Validate required fields before sending
-      _validateRequiredFields(data);
+      _validateRequiredFields(cleanedData);
 
       // Use a timeout that's longer for image-heavy requests
       final response = await _apiServices.getPostApiResponse(
         AppUrl.createStoreUrl,
-        data,
+        cleanedData,
         timeout:
             const Duration(seconds: 30), // Extended timeout for store creation
       );
@@ -52,15 +56,60 @@ class StoreRepository {
     }
   }
 
+  // Helper method to clean store data before sending
+  Map<String, dynamic> _cleanStoreData(Map<String, dynamic> data) {
+    // Create a copy of the data to avoid modifying the original
+    final Map<String, dynamic> cleanedData = Map.from(data);
+
+    // Clean heading value if it exists
+    if (cleanedData.containsKey('heading')) {
+      String heading = cleanedData['heading'];
+
+      // Ensure proper encoding for special characters
+      if (heading.contains('&amp;')) {
+        heading = heading.replaceAll('&amp;', '&');
+      }
+
+      // Validate against allowed headings
+      bool isAllowed = false;
+      for (String allowedHeading in FormUtils.ALLOWED_HEADINGS) {
+        if (heading == allowedHeading) {
+          isAllowed = true;
+          break;
+        }
+      }
+
+      // If not an exact match, try to find the closest match
+      if (!isAllowed) {
+        for (String allowedHeading in FormUtils.ALLOWED_HEADINGS) {
+          if (allowedHeading.replaceAll(' ', '').toLowerCase() ==
+              heading.replaceAll(' ', '').toLowerCase()) {
+            heading = allowedHeading;
+            isAllowed = true;
+            break;
+          }
+        }
+      }
+
+      // Use a default if still not valid
+      if (!isAllowed) {
+        heading = FormUtils.ALLOWED_HEADINGS[0];
+        if (kDebugMode) {
+          print(
+              "Warning: Invalid heading value corrected to default: $heading");
+        }
+      }
+
+      cleanedData['heading'] = heading;
+    }
+
+    return cleanedData;
+  }
+
   // Helper method to validate required fields
   void _validateRequiredFields(Map<String, dynamic> data) {
     if (!data.containsKey('name') || data['name'].toString().isEmpty) {
       throw Exception("Store name is required");
-    }
-
-    if (!data.containsKey('directUrl') ||
-        data['directUrl'].toString().isEmpty) {
-      throw Exception("Direct URL is required");
     }
 
     if (!data.containsKey('short_description') ||
@@ -114,18 +163,21 @@ class StoreRepository {
 
   Future<dynamic> updateStore(Map<String, dynamic> data) async {
     try {
-      final String storeId = data['_id']; // Extract ID correctly
+      // Clean the data before sending
+      final cleanedData = _cleanStoreData(data);
+
+      final String storeId = cleanedData['_id']; // Extract ID correctly
       if (storeId.isEmpty) {
         throw Exception("Store ID is required for updating.");
       }
 
       // Validate required fields before sending
-      _validateRequiredFields(data);
+      _validateRequiredFields(cleanedData);
 
       // Use a timeout that's longer for image-heavy requests
       final response = await _apiServices.getPutApiResponse(
         AppUrl.updateStoreUrl(storeId),
-        data,
+        cleanedData,
         timeout:
             const Duration(seconds: 30), // Extended timeout for store update
       );

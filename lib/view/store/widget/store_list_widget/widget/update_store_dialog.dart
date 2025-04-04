@@ -12,7 +12,6 @@ class UpdateStoreDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final nameController = TextEditingController(text: store.name);
-    final directUrlController = TextEditingController(text: store.directUrl);
     final trackingUrlController =
         TextEditingController(text: store.trackingUrl);
     final descriptionController =
@@ -32,16 +31,6 @@ class UpdateStoreDialog extends StatelessWidget {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter a store name';
-                    }
-                    return null;
-                  },
-                ),
-                CustomTextFormField(
-                  controller: directUrlController,
-                  labelText: 'Direct URL',
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a direct URL';
                     }
                     return null;
                   },

@@ -16,8 +16,9 @@ class StoreListItem extends StatelessWidget {
             ? _buildImage(store.image.url)
             : const Icon(Icons.store),
         title: Text(store.name.isNotEmpty ? store.name : 'Unnamed Store'),
-        subtitle: Text(
-            store.directUrl.isNotEmpty ? store.directUrl : 'No Direct URL'),
+        subtitle: Text(store.trackingUrl.isNotEmpty
+            ? store.trackingUrl
+            : 'No Tracking URL'),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

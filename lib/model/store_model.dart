@@ -1,5 +1,8 @@
-// Import CategoryData from category_model.dart instead of redefining it
+// Updated StoreModel.dart
+
+import 'dart:convert';
 import 'package:coupon_admin_panel/model/category_model.dart';
+import 'package:coupon_admin_panel/utils/form_util.dart';
 
 class StoreModel {
   String status;
@@ -15,6 +18,13 @@ class StoreModel {
         data: Data.fromJson(json["data"]),
       );
 
+  // When sending data to the backend, use the filtered JSON.
+  Map<String, dynamic> toJsonForRequest() => {
+        "status": status,
+        "data": data.toJsonForRequest(),
+      };
+
+  // Optionally, keep the original toJson() if needed for other purposes.
   Map<String, dynamic> toJson() => {
         "status": status,
         "data": data.toJson(),
@@ -22,71 +32,56 @@ class StoreModel {
 }
 
 class Data {
+  String id;
   String name;
-  String directUrl;
   String trackingUrl;
   String shortDescription;
   String longDescription;
   StoreImage image;
-  List<CategoryData> categories; // Use CategoryData from category_model.dart
+  List<CategoryData> categories;
   Seo seo;
   String language;
-  String id;
-  DateTime createdAt;
-  DateTime updatedAt;
-  String slug;
-  int v;
   bool isTopStore;
   bool isEditorsChoice;
   String heading;
 
   Data({
+    required this.id,
     required this.name,
-    required this.directUrl,
     required this.trackingUrl,
     required this.shortDescription,
     required this.longDescription,
     required this.image,
-    required this.categories, // List of CategoryData
+    required this.categories,
     required this.seo,
     required this.language,
-    required this.id,
-    required this.createdAt,
-    required this.updatedAt,
-    required this.slug,
-    required this.v,
     required this.isTopStore,
     required this.isEditorsChoice,
     required this.heading,
   });
 
   factory Data.fromJson(Map<String, dynamic> json) => Data(
+        id: json["_id"],
         name: json["name"],
-        directUrl: json["directUrl"],
         trackingUrl: json["trackingUrl"],
         shortDescription: json["short_description"],
         longDescription: json["long_description"],
         image: StoreImage.fromJson(json["image"]),
         categories: (json["categories"] as List<dynamic>).map((x) {
           return x is String
-              ? CategoryData(id: x, name: '') // Handle if category is a string
-              : CategoryData.fromJson(x); // Otherwise, parse as CategoryData
+              ? CategoryData(id: x, name: '')
+              : CategoryData.fromJson(x);
         }).toList(),
         seo: Seo.fromJson(json["seo"]),
         language: json["language"],
-        id: json["_id"],
-        createdAt: DateTime.parse(json["createdAt"]),
-        updatedAt: DateTime.parse(json["updatedAt"]),
-        slug: json["slug"],
-        v: json["__v"],
         isTopStore: json["isTopStore"] ?? false,
         isEditorsChoice: json["isEditorsChoice"] ?? false,
         heading: json["heading"] ?? 'Coupons & Promo Codes',
       );
 
+  // Full serialization (if needed for internal use)
   Map<String, dynamic> toJson() => {
         "name": name,
-        "directUrl": directUrl,
         "trackingUrl": trackingUrl,
         "short_description": shortDescription,
         "long_description": longDescription,
@@ -95,14 +90,42 @@ class Data {
         "seo": seo.toJson(),
         "language": language,
         "_id": id,
-        "createdAt": createdAt.toIso8601String(),
-        "updatedAt": updatedAt.toIso8601String(),
-        "slug": slug,
-        "__v": v,
+        // The following fields are maintained internally:
+        // "createdAt": createdAt.toIso8601String(),
+        // "updatedAt": updatedAt.toIso8601String(),
+        // "slug": slug,
+        // "__v": v,
         "isTopStore": isTopStore,
         "isEditorsChoice": isEditorsChoice,
-        "heading": heading,
+        "heading": _cleanHeading(heading),
       };
+
+  // New method: builds JSON including the id while excluding unnecessary backend-managed fields.
+  Map<String, dynamic> toJsonForRequest() {
+    return {
+      "id": id,
+      "name": name,
+      "trackingUrl": trackingUrl,
+      "short_description": shortDescription,
+      "long_description": longDescription,
+      "image": image.toJson(),
+      "categories": categories.map((x) => x.toJson()).toList(),
+      "seo": seo.toJson(),
+      "language": language,
+      "isTopStore": isTopStore,
+      "isEditorsChoice": isEditorsChoice,
+      "heading": _cleanHeading(heading),
+    };
+  }
+
+  // Helper method to clean heading values and prevent HTML encoding
+  String _cleanHeading(String headingValue) {
+    return headingValue
+        .replaceAll('&amp;', '&') // Convert encoded
+        .replaceAll(' ', ' ') // Remove invisible non-breaking space
+        .replaceAll('&', '&') // Stop future encoding
+        .trim();
+  }
 }
 
 class StoreImage {

@@ -1,10 +1,6 @@
-import 'package:coupon_admin_panel/utils/date_utils.dart';
-import 'package:coupon_admin_panel/view_model/coupon_view_model/coupon_view_model.dart';
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 import 'package:coupon_admin_panel/model/coupon_model.dart';
-import 'package:coupon_admin_panel/res/components/custom_textfild_component.dart';
+import 'package:flutter/material.dart';
+
 class UpdateCouponDialog extends StatefulWidget {
   final CouponData coupon;
   final Function(Map<String, dynamic>) onUpdate;

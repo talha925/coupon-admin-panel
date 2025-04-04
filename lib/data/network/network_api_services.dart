@@ -4,19 +4,28 @@ import 'dart:io';
 import 'package:coupon_admin_panel/data/app_exception.dart';
 import 'package:coupon_admin_panel/data/network/auth_interceptor.dart';
 import 'package:coupon_admin_panel/data/network/base_api_services.dart';
+import 'package:coupon_admin_panel/res/app_url.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 class NetworkApiServices extends BaseAPiServices {
-  final Dio _dio = Dio();
+  late final Dio _dio;
 
   // Default timeout that can be overridden
   final Duration defaultTimeout = const Duration(seconds: 15);
 
   NetworkApiServices() {
-    _dio.options.headers = {
-      'Content-Type': 'application/json',
-    };
-
+    _dio = Dio(BaseOptions(
+      baseUrl: AppUrl.baseUrl,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      connectTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(seconds: 30),
+      // Web-specific configuration
+      sendTimeout: kIsWeb ? null : const Duration(seconds: 30),
+    ));
     // Add auth interceptor
     _dio.interceptors.add(AuthInterceptor(_dio));
 
@@ -29,9 +38,7 @@ class NetworkApiServices extends BaseAPiServices {
         responseHeader: true,
         logPrint: (obj) {
           // Only print logs in debug mode
-          if (obj != null) {
-            print(obj.toString());
-          }
+          print(obj.toString());
         }));
   }
 

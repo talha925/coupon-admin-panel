@@ -12,7 +12,6 @@ class StoreFormFields extends StatelessWidget {
   final TextEditingController nameController;
   final TextEditingController shortDescriptionController;
   final TextEditingController longDescriptionController;
-  final TextEditingController directUrlController;
   final TextEditingController trackingUrlController;
   final TextEditingController metaTitleController;
   final TextEditingController metaDescriptionController;
@@ -21,7 +20,6 @@ class StoreFormFields extends StatelessWidget {
   final FocusNode nameFocusNode;
   final FocusNode shortDescriptionFocusNode;
   final FocusNode longDescriptionFocusNode;
-  final FocusNode directUrlFocusNode;
   final FocusNode trackingUrlFocusNode;
   final FocusNode metaTitleFocusNode;
   final FocusNode metaDescriptionFocusNode;
@@ -39,7 +37,6 @@ class StoreFormFields extends StatelessWidget {
     required this.nameController,
     required this.shortDescriptionController,
     required this.longDescriptionController,
-    required this.directUrlController,
     required this.trackingUrlController,
     required this.metaTitleController,
     required this.metaDescriptionController,
@@ -47,7 +44,6 @@ class StoreFormFields extends StatelessWidget {
     required this.nameFocusNode,
     required this.shortDescriptionFocusNode,
     required this.longDescriptionFocusNode,
-    required this.directUrlFocusNode,
     required this.trackingUrlFocusNode,
     required this.metaTitleFocusNode,
     required this.metaDescriptionFocusNode,
@@ -106,18 +102,8 @@ class StoreFormFields extends StatelessWidget {
           controller: longDescriptionController,
           labelText: 'Long Description',
           focusNode: longDescriptionFocusNode,
-          nextFocusNode: directUrlFocusNode,
-          validator: (value) => FormUtils.validateDescription(value),
-        ),
-        const SizedBox(height: 10),
-
-        // Direct URL Field
-        CustomTextFormField(
-          controller: directUrlController,
-          labelText: 'Direct URL',
-          focusNode: directUrlFocusNode,
           nextFocusNode: trackingUrlFocusNode,
-          validator: (value) => FormUtils.validateWebsite(value),
+          validator: (value) => FormUtils.validateDescription(value),
         ),
         const SizedBox(height: 10),
 
@@ -128,6 +114,15 @@ class StoreFormFields extends StatelessWidget {
           focusNode: trackingUrlFocusNode,
           nextFocusNode: metaTitleFocusNode,
           validator: (value) => FormUtils.validateWebsite(value),
+          suffixIcon: Tooltip(
+            message: 'Include full path: https://example.com/path/endpoint',
+            child: Icon(Icons.info_outline, size: 16),
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Must be a complete URL including path (e.g., https://example.com/store/track)',
+          style: TextStyle(fontSize: 12, color: Colors.grey),
         ),
         const SizedBox(height: 10),
 

@@ -8,54 +8,56 @@ class CouponRepository {
   final BaseAPiServices _apiServices = NetworkApiServices();
 
 // createCoupon
-Future<dynamic> createCoupon(Map<String, dynamic> data) async {
-  try {
-    // Determine if "Code" was selected (active is false)
-    final isCodeSelected = data['active'] == false;
+  Future<dynamic> createCoupon(Map<String, dynamic> data) async {
+    try {
+      // Determine if "Code" was selected (active is false)
+      final isCodeSelected = data['active'] == false;
 
-    // Conditional coupon code check
-    if (isCodeSelected && (data['code'] == null || data['code'].toString().isEmpty)) {
-      throw Exception('Coupon code is required because "Code" was selected');
+      // Conditional coupon code check
+      if (isCodeSelected &&
+          (data['code'] == null || data['code'].toString().isEmpty)) {
+        throw Exception('Coupon code is required because "Code" was selected');
+      }
+
+      // Always required fields
+      if (data['offerDetails'] == null ||
+          data['offerDetails'].toString().isEmpty) {
+        throw Exception('Offer details are required');
+      }
+
+      if (data['store'] == null || data['store'].toString().isEmpty) {
+        throw Exception('Store ID is required');
+      }
+
+      // Set defaults if not provided
+      data['active'] ??= true;
+      data['featuredForHome'] ??= false;
+
+      // Log payload for debugging
+      if (kDebugMode) {
+        print("Sending payload to create coupon: $data");
+      }
+
+      // Send POST request
+      final response = await _apiServices.getPostApiResponse(
+        AppUrl.createCouponUrl,
+        data,
+      );
+
+      // Log response for debugging
+      if (kDebugMode) {
+        print("Coupon creation response: $response");
+      }
+
+      return response;
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        print("Error creating coupon: $e");
+        print("StackTrace: $stackTrace");
+      }
+      rethrow;
     }
-
-    // Always required fields
-    if (data['offerDetails'] == null || data['offerDetails'].toString().isEmpty) {
-      throw Exception('Offer details are required');
-    }
-
-    if (data['store'] == null || data['store'].toString().isEmpty) {
-      throw Exception('Store ID is required');
-    }
-
-    // Set defaults if not provided
-    data['active'] ??= true;
-    data['featuredForHome'] ??= false;
-
-    // Log payload for debugging
-    if (kDebugMode) {
-      print("Sending payload to create coupon: $data");
-    }
-
-    // Send POST request
-    final response = await _apiServices.getPostApiResponse(
-      AppUrl.createCouponUrl,
-      data,
-    );
-
-    // Log response for debugging
-    if (kDebugMode) {
-      print("Coupon creation response: $response");
-    }
-
-    return response;
-  } catch (e, stackTrace) {
-    if (kDebugMode) {
-      print("Error creating coupon: $e");
-      print("StackTrace: $stackTrace");
-    }
-    rethrow;
   }
-}
 
 // fetchCoupons
   Future<List<CouponData>> fetchCoupons() async {
@@ -175,7 +177,7 @@ Future<dynamic> createCoupon(Map<String, dynamic> data) async {
       rethrow;
     }
   }
-  
+
 //updateCoupon
   Future<dynamic> updateCoupon(Map<String, dynamic> data) async {
     try {

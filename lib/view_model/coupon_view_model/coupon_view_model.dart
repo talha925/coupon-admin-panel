@@ -1,3 +1,5 @@
+// ✅ Updated Coupon ViewModel with Store Filtering & Management
+
 import 'package:flutter/foundation.dart';
 import 'package:coupon_admin_panel/repository/coupon_repository.dart';
 import 'package:coupon_admin_panel/model/coupon_model.dart';
@@ -54,24 +56,21 @@ class CouponViewModel with ChangeNotifier {
     }
   }
 
-  // Search coupons by name or description
+  // Search coupons by code or offer details
   void searchCoupons(String query) {
     if (query.isEmpty) {
-      _filterCoupons(); // Reset to current filter
+      _filterCoupons();
     } else {
       final lowercaseQuery = query.toLowerCase();
       _filteredCoupons = _coupons.where((coupon) {
-        final lowerCode = coupon.code.toLowerCase();
-        final lowerOfferDetails = coupon.offerDetails.toLowerCase();
-
-        return lowerCode.contains(lowercaseQuery) ||
-            lowerOfferDetails.contains(lowercaseQuery);
+        return coupon.code.toLowerCase().contains(lowercaseQuery) ||
+            coupon.offerDetails.toLowerCase().contains(lowercaseQuery);
       }).toList();
     }
     notifyListeners();
   }
 
-  // Fetch coupons from the repository
+  // Fetch coupons
   Future<void> getCoupons() async {
     _isFetching = true;
     _errorMessage = null;
@@ -80,23 +79,14 @@ class CouponViewModel with ChangeNotifier {
     try {
       final List<CouponData> fetchedCoupons =
           await _couponRepository.fetchCoupons();
-
       _coupons = fetchedCoupons;
 
-      // Sort coupons with featured ones first
-      _coupons.sort((a, b) {
-        if (a.featuredForHome != b.featuredForHome) {
-          return a.featuredForHome ? -1 : 1;
-        }
-        return 0;
-      });
+      // Optional: Sort featured first
+      _coupons.sort((a, b) => b.featuredForHome ? 1 : -1);
 
       _filterCoupons();
     } catch (e) {
       _errorMessage = 'Error fetching coupons: ${e.toString()}';
-      if (kDebugMode) {
-        print(_errorMessage);
-      }
     } finally {
       _isFetching = false;
       notifyListeners();
@@ -105,41 +95,33 @@ class CouponViewModel with ChangeNotifier {
 
   // Create coupon
   Future<bool> createCoupon(Map<String, dynamic> couponData) async {
+    _isSubmitting = true;
+    notifyListeners();
+
     try {
-      _isSubmitting = true;
-      notifyListeners();
-
       await _couponRepository.createCoupon(couponData);
-      await getCoupons(); // Refresh the list after creating
-
-      _isSubmitting = false;
-      notifyListeners();
+      await getCoupons();
       return true;
     } catch (e) {
+      _errorMessage = 'Error creating coupon: ${e.toString()}';
+      return false;
+    } finally {
       _isSubmitting = false;
       notifyListeners();
-      if (kDebugMode) {
-        print("Error creating coupon: $e");
-      }
-      return false;
     }
   }
 
   // Delete coupon
   Future<bool> deleteCoupon(String couponId) async {
     _isSubmitting = true;
-    _errorMessage = null;
     notifyListeners();
 
     try {
       await _couponRepository.deleteCoupon(couponId);
-      await getCoupons(); // Refresh the list after deleting
+      await getCoupons();
       return true;
     } catch (e) {
       _errorMessage = 'Error deleting coupon: ${e.toString()}';
-      if (kDebugMode) {
-        print(_errorMessage);
-      }
       return false;
     } finally {
       _isSubmitting = false;
@@ -155,21 +137,15 @@ class CouponViewModel with ChangeNotifier {
 
     try {
       final response = await _couponRepository.updateCoupon(coupon.toJson());
-
       if (response != null && response['status'] == 'success') {
-        await getCoupons(); // Refresh coupons after successful update
+        await getCoupons();
         return true;
       } else {
-        _errorMessage = response != null && response['message'] != null
-            ? 'Failed to update coupon: ${response['message']}'
-            : 'Failed to update coupon: Unknown error';
+        _errorMessage = response?['message'] ?? 'Unknown update error';
         return false;
       }
     } catch (e) {
       _errorMessage = 'Error updating coupon: ${e.toString()}';
-      if (kDebugMode) {
-        print(_errorMessage);
-      }
       return false;
     } finally {
       _isSubmitting = false;
@@ -177,63 +153,27 @@ class CouponViewModel with ChangeNotifier {
     }
   }
 
-  // Toggle coupon activation status
+  // Toggle active
   Future<bool> toggleCouponActiveStatus(String couponId) async {
     try {
       final coupon = _coupons.firstWhere((c) => c.id == couponId);
-      final updatedCoupon = CouponData(
-        id: coupon.id,
-        code: coupon.code,
-        offerDetails: coupon.offerDetails,
-        active: !coupon.active,
-        isValid: coupon.isValid,
-        featuredForHome: coupon.featuredForHome,
-        hits: coupon.hits,
-        lastAccessed: coupon.lastAccessed,
-        storeId: coupon.storeId,
-      );
-      final success = await updateCoupon(updatedCoupon);
-      if (success) {
-        final index = _coupons.indexWhere((c) => c.id == couponId);
-        if (index != -1) {
-          _coupons[index] = updatedCoupon;
-          notifyListeners();
-        }
-      }
-      return success;
+      final updated = coupon.copyWith(active: !coupon.active);
+      return await updateCoupon(updated);
     } catch (e) {
-      _errorMessage = 'Error toggling coupon status: ${e.toString()}';
+      _errorMessage = 'Error toggling active: ${e.toString()}';
       notifyListeners();
       return false;
     }
   }
 
-  // Toggle featured for home status
+  // Toggle featured
   Future<bool> toggleCouponFeaturedStatus(String couponId) async {
     try {
       final coupon = _coupons.firstWhere((c) => c.id == couponId);
-      final updatedCoupon = CouponData(
-        id: coupon.id,
-        code: coupon.code,
-        offerDetails: coupon.offerDetails,
-        active: coupon.active,
-        isValid: coupon.isValid,
-        featuredForHome: !coupon.featuredForHome,
-        hits: coupon.hits,
-        lastAccessed: coupon.lastAccessed,
-        storeId: coupon.storeId,
-      );
-      final success = await updateCoupon(updatedCoupon);
-      if (success) {
-        final index = _coupons.indexWhere((c) => c.id == couponId);
-        if (index != -1) {
-          _coupons[index] = updatedCoupon;
-          notifyListeners();
-        }
-      }
-      return success;
+      final updated = coupon.copyWith(featuredForHome: !coupon.featuredForHome);
+      return await updateCoupon(updated);
     } catch (e) {
-      _errorMessage = 'Error toggling featured status: ${e.toString()}';
+      _errorMessage = 'Error toggling featured: ${e.toString()}';
       notifyListeners();
       return false;
     }

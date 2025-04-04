@@ -56,6 +56,29 @@ class CouponData {
     required this.lastAccessed,
     required this.storeId,
   });
+  CouponData copyWith({
+    String? id,
+    String? offerDetails,
+    String? code,
+    bool? active,
+    bool? isValid,
+    bool? featuredForHome,
+    int? hits,
+    DateTime? lastAccessed,
+    String? storeId,
+  }) {
+    return CouponData(
+      id: id ?? this.id,
+      offerDetails: offerDetails ?? this.offerDetails,
+      code: code ?? this.code,
+      active: active ?? this.active,
+      isValid: isValid ?? this.isValid,
+      featuredForHome: featuredForHome ?? this.featuredForHome,
+      hits: hits ?? this.hits,
+      lastAccessed: lastAccessed ?? this.lastAccessed,
+      storeId: storeId ?? this.storeId,
+    );
+  }
 
   factory CouponData.fromJson(Map<String, dynamic> json) => CouponData(
         id: json["_id"],
