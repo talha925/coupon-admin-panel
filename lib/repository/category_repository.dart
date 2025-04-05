@@ -8,20 +8,11 @@ class CategoryRepository {
   // Create a new category
   Future<dynamic> createCategory(Map<String, dynamic> data) async {
     try {
-      if (kDebugMode) {
-        print("Repository creating category with data: $data");
-      }
-
       final response = await _apiService.createCategory(data);
-
-      if (kDebugMode) {
-        print("Category creation response: $response");
-      }
-
       return response;
     } catch (e) {
       if (kDebugMode) {
-        print("Repository error creating category: $e");
+        print("Error creating category: $e");
       }
       rethrow;
     }
@@ -53,7 +44,7 @@ class CategoryRepository {
       }
     } catch (e) {
       if (kDebugMode) {
-        print("Repository error fetching categories: $e");
+        print("Error fetching categories: $e");
       }
       rethrow; // Re-throw the exception to be caught by the caller
     }
@@ -62,20 +53,11 @@ class CategoryRepository {
   // Update an existing category
   Future<dynamic> updateCategory(Map<String, dynamic> data) async {
     try {
-      if (kDebugMode) {
-        print("Repository updating category with data: $data");
-      }
-
       final response = await _apiService.updateCategory(data);
-
-      if (kDebugMode) {
-        print("Category update response: $response");
-      }
-
       return response;
     } catch (e) {
       if (kDebugMode) {
-        print("Repository error updating category: $e");
+        print("Error updating category: $e");
       }
       rethrow;
     }
@@ -84,20 +66,11 @@ class CategoryRepository {
   // Delete a category
   Future<dynamic> deleteCategory(String categoryId) async {
     try {
-      if (kDebugMode) {
-        print("Repository deleting category: $categoryId");
-      }
-
       final response = await _apiService.deleteCategory(categoryId);
-
-      if (kDebugMode) {
-        print("Category deletion response: $response");
-      }
-
       return response;
     } catch (e) {
       if (kDebugMode) {
-        print("Repository error deleting category: $e");
+        print("Error deleting category: $e");
       }
       rethrow;
     }

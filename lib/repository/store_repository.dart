@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:coupon_admin_panel/data/network/base_api_services.dart';
 import 'package:coupon_admin_panel/data/network/network_api_services.dart';
 import 'package:coupon_admin_panel/model/store_model.dart';
@@ -15,11 +13,6 @@ class StoreRepository {
       // Clean the data before sending
       final cleanedData = _cleanStoreData(data);
 
-      if (kDebugMode) {
-        print("Sending data: $cleanedData to URL: ${AppUrl.createStoreUrl}");
-        print("Sending store data: ${jsonEncode(cleanedData)}");
-      }
-
       // Validate required fields before sending
       _validateRequiredFields(cleanedData);
 
@@ -30,10 +23,6 @@ class StoreRepository {
         timeout:
             const Duration(seconds: 30), // Extended timeout for store creation
       );
-
-      if (kDebugMode) {
-        print("Response: $response");
-      }
 
       // Validate the response
       if (response == null) {
@@ -94,10 +83,6 @@ class StoreRepository {
       // Use a default if still not valid
       if (!isAllowed) {
         heading = FormUtils.ALLOWED_HEADINGS[0];
-        if (kDebugMode) {
-          print(
-              "Warning: Invalid heading value corrected to default: $heading");
-        }
       }
 
       cleanedData['heading'] = heading;
@@ -192,10 +177,6 @@ class StoreRepository {
             ? response['message']
             : 'Server returned unsuccessful status';
         throw Exception(message);
-      }
-
-      if (kDebugMode) {
-        print("Store updated successfully: $response");
       }
 
       return response;

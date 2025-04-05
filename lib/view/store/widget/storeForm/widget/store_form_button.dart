@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:coupon_admin_panel/model/category_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -95,7 +93,7 @@ class StoreFormButton extends StatelessWidget {
         );
 
         uploadedImageUrl = await imagePickerVM.uploadImageToS3();
-        if (uploadedImageUrl == null || uploadedImageUrl.isEmpty) {
+        if (uploadedImageUrl.isEmpty) {
           throw Exception('Image upload failed.');
         }
 

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:coupon_admin_panel/res/app_url.dart';
@@ -22,51 +21,27 @@ class CategoryApiService {
       },
     );
 
-    // Add special handling for web platform
+    // Add special handling for web platform with silent interceptor
     if (kIsWeb) {
       // Using a transform interceptor to properly format requests for web
       _dio.interceptors.add(InterceptorsWrapper(
         onRequest: (options, handler) {
-          // Print request details in debug mode
-          if (kDebugMode) {
-            print("🚀 Request: ${options.method} ${options.path}");
-            print("Headers: ${options.headers}");
-            print("Data: ${options.data}");
-          }
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          // Print response in debug mode
-          if (kDebugMode) {
-            print(
-                "✅ Response [${response.statusCode}]: ${response.requestOptions.path}");
-            print("Response data: ${response.data}");
-          }
           return handler.next(response);
         },
         onError: (error, handler) {
-          // Print error in debug mode
+          // Only log critical errors in debug mode
           if (kDebugMode) {
-            print(
-                "❌ Error [${error.response?.statusCode}]: ${error.requestOptions.path}");
-            print("Error message: ${error.message}");
-            print("Error response: ${error.response?.data}");
+            print("Critical error: ${error.message}");
           }
           return handler.next(error);
         },
       ));
     }
 
-    // Add logging interceptor for debugging (only in debug mode)
-    if (kDebugMode) {
-      _dio.interceptors.add(LogInterceptor(
-        requestBody: true,
-        responseBody: true,
-        error: true,
-        requestHeader: true,
-        responseHeader: true,
-      ));
-    }
+    // No logging interceptor for production code
   }
 
   // Fetch all categories

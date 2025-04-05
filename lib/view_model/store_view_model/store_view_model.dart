@@ -74,8 +74,10 @@ class StoreViewModel with ChangeNotifier {
       _stores = fetchedStores;
       _filteredStores = List.from(_stores);
     } catch (e) {
-      _errorMessage = 'Error fetching stores: \${e.toString()}';
-      if (kDebugMode) print(_errorMessage);
+      _errorMessage = 'Error fetching stores: ${e.toString()}';
+      if (kDebugMode) {
+        print('Error fetching stores: $e');
+      }
     } finally {
       _isFetching = false;
       notifyListeners();
@@ -119,8 +121,6 @@ class StoreViewModel with ChangeNotifier {
     notifyListeners();
 
     try {
-      if (kDebugMode) print("Creating store: \${store.toJson()}");
-
       final Map<String, dynamic> response =
           await _storeRepository.createStore(store.toJson());
 
@@ -132,17 +132,19 @@ class StoreViewModel with ChangeNotifier {
         _stores.add(newStore);
         _filteredStores = List.from(_stores);
         _errorMessage = null;
-
-        if (kDebugMode) print("Store created successfully: \${newStore.id}");
         return true;
       } else {
         _errorMessage = 'Invalid response: Store ID missing.';
-        if (kDebugMode) print("Invalid response: \$response");
+        if (kDebugMode) {
+          print('Invalid response: $response');
+        }
         return false;
       }
     } catch (e) {
-      _errorMessage = 'Error creating store: \${e.toString()}';
-      if (kDebugMode) print(_errorMessage);
+      _errorMessage = 'Error creating store: ${e.toString()}';
+      if (kDebugMode) {
+        print('Error creating store: $e');
+      }
       return false;
     } finally {
       _isSubmitting = false;
@@ -161,10 +163,11 @@ class StoreViewModel with ChangeNotifier {
       _stores.removeWhere((store) => store.id == storeId);
       _filteredStores = List.from(_stores);
       _errorMessage = null;
-      if (kDebugMode) print('Store deleted successfully');
     } catch (e) {
-      _errorMessage = 'Error deleting store: \${e.toString()}';
-      if (kDebugMode) print(_errorMessage);
+      _errorMessage = 'Error deleting store: ${e.toString()}';
+      if (kDebugMode) {
+        print('Error deleting store: $e');
+      }
     } finally {
       _isSubmitting = false;
       notifyListeners();
@@ -185,16 +188,19 @@ class StoreViewModel with ChangeNotifier {
         _stores[index] = store;
         _filteredStores = List.from(_stores);
         _errorMessage = null;
-        if (kDebugMode) print('Store updated successfully');
         return true;
       } else {
         _errorMessage = 'Store not found locally';
-        if (kDebugMode) print(_errorMessage);
+        if (kDebugMode) {
+          print('Store not found locally');
+        }
         return false;
       }
     } catch (e) {
-      _errorMessage = 'Error updating store: \${e.toString()}';
-      if (kDebugMode) print(_errorMessage);
+      _errorMessage = 'Error updating store: ${e.toString()}';
+      if (kDebugMode) {
+        print('Error updating store: $e');
+      }
       return false;
     } finally {
       _isSubmitting = false;

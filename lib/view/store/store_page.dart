@@ -34,11 +34,11 @@ class CreateStorePage extends StatelessWidget {
                 child: Stack(
                   children: [
                     // Form
-                    SingleChildScrollView(
-                      padding: const EdgeInsets.all(16.0),
+                    const SingleChildScrollView(
+                      padding: EdgeInsets.all(16.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           StoreFormWidget(),
                         ],
                       ),

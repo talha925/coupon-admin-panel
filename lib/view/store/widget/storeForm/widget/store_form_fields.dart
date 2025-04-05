@@ -114,7 +114,7 @@ class StoreFormFields extends StatelessWidget {
           focusNode: trackingUrlFocusNode,
           nextFocusNode: metaTitleFocusNode,
           validator: (value) => FormUtils.validateWebsite(value),
-          suffixIcon: Tooltip(
+          suffixIcon: const Tooltip(
             message: 'Include full path: https://example.com/path/endpoint',
             child: Icon(Icons.info_outline, size: 16),
           ),

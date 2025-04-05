@@ -31,10 +31,6 @@ class AuthTokenService {
     await prefs.setString(_accessTokenKey, accessToken);
     await prefs.setString(_refreshTokenKey, refreshToken);
     await prefs.setInt(_tokenExpiryKey, expiryDate.millisecondsSinceEpoch);
-
-    if (kDebugMode) {
-      print('Tokens saved successfully');
-    }
   }
 
   /// Get the stored access token
@@ -78,9 +74,6 @@ class AuthTokenService {
       final refreshToken = await getRefreshToken();
 
       if (refreshToken == null) {
-        if (kDebugMode) {
-          print('No refresh token found');
-        }
         return false;
       }
 

@@ -26,7 +26,7 @@ class FormUtils {
     return null; // ✅ No format restrictions
   }
 
-  /// Validates     the description field.
+  /// Validates the description field.
   static String? validateDescription(String? value) {
     if (value == null || value.isEmpty) {
       return 'Please enter the description';
@@ -47,36 +47,8 @@ class FormUtils {
     return null;
   }
 
-  // Debug method to help with validation
+  /// Debug method — intentionally left empty for production
   static void logValidationInfo(Map<String, dynamic> data) {
-    print('Validating store data: ${data.keys.join(", ")}');
-
-    if (data.containsKey('directUrl')) {
-      final url = data['directUrl'];
-      final uri = Uri.tryParse(url);
-      print('Direct URL: $url');
-      print('  - Is absolute: ${uri?.isAbsolute}');
-      print('  - Scheme: ${uri?.scheme}');
-      print('  - Host: ${uri?.host}');
-      print('  - Path: ${uri?.path}');
-    }
-
-    if (data.containsKey('trackingUrl')) {
-      final url = data['trackingUrl'];
-      final uri = Uri.tryParse(url);
-      print('Tracking URL: $url');
-      print('  - Is absolute: ${uri?.isAbsolute}');
-      print('  - Scheme: ${uri?.scheme}');
-      print('  - Host: ${uri?.host}');
-      print('  - Path: ${uri?.path}');
-    }
-
-    if (data.containsKey('heading')) {
-      final heading = data['heading'];
-      print('Heading: $heading');
-      print('  - Is allowed: ${ALLOWED_HEADINGS.contains(heading)}');
-    }
+    // Debug info disabled for production
   }
-
-  // Add more form-related utility functions as needed...
 }

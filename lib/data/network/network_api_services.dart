@@ -31,15 +31,13 @@ class NetworkApiServices extends BaseAPiServices {
 
     // Add logging interceptor
     _dio.interceptors.add(LogInterceptor(
-        requestBody: true,
-        responseBody: true,
-        error: true,
-        requestHeader: true,
-        responseHeader: true,
-        logPrint: (obj) {
-          // Only print logs in debug mode
-          print(obj.toString());
-        }));
+      requestBody: false,
+      responseBody: false,
+      requestHeader: false,
+      responseHeader: false,
+      error: true,
+      logPrint: (_) {}, // ✅ completely silenced
+    ));
   }
 
   // Method to handle POST requests
@@ -188,8 +186,6 @@ class NetworkApiServices extends BaseAPiServices {
           // For all other cases, return the data as is
           return response.data;
         } catch (e) {
-          print("Error parsing response: $e");
-          print("Response data: ${response.data}");
           throw FetchDataException("Invalid response format");
         }
       default:

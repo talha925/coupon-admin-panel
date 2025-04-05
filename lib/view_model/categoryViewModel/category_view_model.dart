@@ -14,37 +14,17 @@ class CategoryViewModel with ChangeNotifier {
   bool _isSubmitting = false;
   bool get isSubmitting => _isSubmitting;
 
-  // Fetch categories
   Future<void> fetchCategories() async {
     try {
-      if (kDebugMode) {
-        print("Fetching categories...");
-      }
       _categoryResponse = ApiResponse.loading();
       notifyListeners();
 
-      // Make the API call
       final List<CategoryData> categories =
           await _categoryRepository.fetchCategories();
-
-      // Log the fetched data
-      if (kDebugMode) {
-        print("Categories fetched successfully: ${categories.length}");
-      }
-
-      // Update the state with fetched categories
       _categoryResponse = ApiResponse.completed(categories);
     } catch (error) {
-      // Log the error
-      if (kDebugMode) {
-        print("Error fetching categories: $error");
-      }
-
-      // Update the state with error
       _categoryResponse = ApiResponse.error(error.toString());
     }
-
-    // Notify listeners to rebuild UI
     notifyListeners();
   }
 
@@ -58,21 +38,10 @@ class CategoryViewModel with ChangeNotifier {
     notifyListeners();
 
     try {
-      if (kDebugMode) {
-        print("Creating category with name: $name");
-      }
-
       final response = await _categoryRepository.createCategory({'name': name});
+      await fetchCategories();
 
-      if (kDebugMode) {
-        print("Category creation response: $response");
-      }
-
-      await fetchCategories(); // Refresh the category list
-
-      // Check response status
       if (response != null && response['status'] == 'success') {
-        // Before accessing context, ensure widget is mounted
         if (context.mounted) {
           Utils.snackBar('Category added successfully', context);
         }
@@ -88,10 +57,6 @@ class CategoryViewModel with ChangeNotifier {
         return false;
       }
     } catch (e) {
-      if (kDebugMode) {
-        print("Error creating category: $e");
-      }
-
       if (context.mounted) {
         Utils.flushBarErrorMessage('Failed to create category: $e', context);
       }
@@ -115,12 +80,9 @@ class CategoryViewModel with ChangeNotifier {
     try {
       final response =
           await _categoryRepository.updateCategory({'_id': id, 'name': name});
+      await fetchCategories();
 
-      await fetchCategories(); // Refresh the category list
-
-      // Check response status
       if (response != null && response['status'] == 'success') {
-        // Before accessing context, ensure widget is mounted
         if (context.mounted) {
           Utils.snackBar('Category updated successfully', context);
         }
@@ -136,10 +98,6 @@ class CategoryViewModel with ChangeNotifier {
         return false;
       }
     } catch (e) {
-      if (kDebugMode) {
-        print("Error updating category: $e");
-      }
-
       if (context.mounted) {
         Utils.flushBarErrorMessage('Failed to update category: $e', context);
       }
@@ -156,12 +114,9 @@ class CategoryViewModel with ChangeNotifier {
 
     try {
       final response = await _categoryRepository.deleteCategory(id);
+      await fetchCategories();
 
-      await fetchCategories(); // Refresh the category list
-
-      // Check response status
       if (response != null && response['status'] == 'success') {
-        // Before accessing context, ensure widget is mounted
         if (context.mounted) {
           Utils.snackBar('Category deleted successfully', context);
         }
@@ -177,10 +132,6 @@ class CategoryViewModel with ChangeNotifier {
         return false;
       }
     } catch (e) {
-      if (kDebugMode) {
-        print("Error deleting category: $e");
-      }
-
       if (context.mounted) {
         Utils.flushBarErrorMessage('Failed to delete category: $e', context);
       }
