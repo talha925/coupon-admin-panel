@@ -84,7 +84,7 @@ class Data {
         "short_description": shortDescription,
         "long_description": longDescription,
         "image": image.toJson(),
-        "categories": categories.map((x) => x.toJson()).toList(),
+        "categories": categories.map((x) => x.id).toList(), // ✅ Corrected here
         "seo": seo.toJson(),
         "language": language,
         "_id": id,

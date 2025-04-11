@@ -1,10 +1,16 @@
-import 'package:coupon_admin_panel/repository/store_repository.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:coupon_admin_panel/repository/store_repository.dart';
 import 'package:coupon_admin_panel/model/store_model.dart';
 import 'package:coupon_admin_panel/utils/form_util.dart';
+import 'package:coupon_admin_panel/view_model/services/image_picker_view_model_web.dart';
+
+import '../services/image_service.dart';
 
 class StoreViewModel with ChangeNotifier {
   final StoreRepository _storeRepository = StoreRepository();
+  final ImageService _imageService = ImageService();
 
   bool _isFetching = false;
   bool _isSubmitting = false;
@@ -24,7 +30,6 @@ class StoreViewModel with ChangeNotifier {
   List<Data> get stores => _stores;
   List<Data> get filteredStores => _filteredStores;
 
-  // Toggle states
   bool _isTopStore = false;
   bool _isEditorsChoice = false;
 
@@ -113,17 +118,34 @@ class StoreViewModel with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> createStore(Data store) async {
+  Future<bool> createStore(Data store, BuildContext context) async {
     if (_isSubmitting) return false;
 
     _isSubmitting = true;
     _errorMessage = null;
     notifyListeners();
 
+    final imagePickerViewModel =
+        Provider.of<ImagePickerViewModel>(context, listen: false);
+
     try {
+      // Check if image is selected and uploaded
+      if (imagePickerViewModel.selectedImageBytes != null) {
+        // Only upload if it's not already uploaded
+        if (store.image?.url == null || store.image?.url?.isEmpty == true) {
+          final imageUrl = await _imageService.uploadImageToS3(
+            imagePickerViewModel.selectedImageBytes!,
+            imagePickerViewModel.selectedImageName!,
+          );
+          store.image = StoreImage(url: imageUrl, alt: 'Store Image');
+        }
+      }
+
+      // Create store with the image URL
       final Map<String, dynamic> response =
           await _storeRepository.createStore(store.toJson());
 
+      // Validate response
       if (response.containsKey('data') &&
           response['data'] is Map<String, dynamic> &&
           response['data']['_id'] != null &&
@@ -131,20 +153,82 @@ class StoreViewModel with ChangeNotifier {
         final newStore = Data.fromJson(response['data']);
         _stores.add(newStore);
         _filteredStores = List.from(_stores);
+        imagePickerViewModel.clearImage(); // Clear image after success
         _errorMessage = null;
         return true;
       } else {
         _errorMessage = 'Invalid response: Store ID missing.';
-        if (kDebugMode) {
-          print('Invalid response: $response');
-        }
         return false;
       }
     } catch (e) {
       _errorMessage = 'Error creating store: ${e.toString()}';
-      if (kDebugMode) {
-        print('Error creating store: $e');
+      return false;
+    } finally {
+      _isSubmitting = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> updateStore(Data store, BuildContext context) async {
+    if (_isSubmitting) return false;
+
+    _isSubmitting = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    final imagePickerVM =
+        Provider.of<ImagePickerViewModel>(context, listen: false);
+    String? newImageUrl;
+    final oldImageUrl = store.image?.url;
+
+    try {
+      // Upload new image if selected
+      if (imagePickerVM.selectedImageBytes != null) {
+        newImageUrl = await _imageService.uploadImageToS3(
+          imagePickerVM.selectedImageBytes!,
+          imagePickerVM.selectedImageName!,
+        );
+        store.image = StoreImage(url: newImageUrl, alt: 'Updated Store Image');
       }
+
+      // Update store data
+      await _storeRepository.updateStore(store.toJson());
+
+      // Delete old image only after successful update
+      if (newImageUrl != null &&
+          oldImageUrl != null &&
+          oldImageUrl.isNotEmpty) {
+        try {
+          await _imageService.deleteImage(oldImageUrl);
+          debugPrint('Successfully deleted old image: $oldImageUrl');
+        } catch (e) {
+          debugPrint('Warning: Could not delete old image: $e');
+          // Consider logging this to your error tracking system
+        }
+      }
+
+      // Update local state
+      final index = _stores.indexWhere((s) => s.id == store.id);
+      if (index != -1) {
+        _stores[index] = store;
+        _filteredStores = List.from(_stores);
+        imagePickerVM.clearImage();
+        return true;
+      }
+
+      _errorMessage = 'Store not found locally';
+      return false;
+    } catch (e) {
+      // Cleanup newly uploaded image if update failed
+      if (newImageUrl != null) {
+        try {
+          await _imageService.deleteImage(newImageUrl);
+        } catch (deleteError) {
+          debugPrint('Failed to cleanup new image: $deleteError');
+        }
+      }
+
+      _errorMessage = 'Error updating store: ${e.toString()}';
       return false;
     } finally {
       _isSubmitting = false;
@@ -163,51 +247,17 @@ class StoreViewModel with ChangeNotifier {
       _stores.removeWhere((store) => store.id == storeId);
       _filteredStores = List.from(_stores);
       _errorMessage = null;
+      if (kDebugMode) print('Store deleted successfully');
     } catch (e) {
-      _errorMessage = 'Error deleting store: ${e.toString()}';
-      if (kDebugMode) {
-        print('Error deleting store: $e');
-      }
+      _errorMessage = 'Error deleting store: \${e.toString()}';
+      if (kDebugMode) print(_errorMessage);
     } finally {
       _isSubmitting = false;
       notifyListeners();
     }
   }
 
-  Future<bool> updateStore(Data store) async {
-    if (_isSubmitting) return false;
-
-    _isSubmitting = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      await _storeRepository.updateStore(store.toJson());
-      final index = _stores.indexWhere((s) => s.id == store.id);
-      if (index != -1) {
-        _stores[index] = store;
-        _filteredStores = List.from(_stores);
-        _errorMessage = null;
-        return true;
-      } else {
-        _errorMessage = 'Store not found locally';
-        if (kDebugMode) {
-          print('Store not found locally');
-        }
-        return false;
-      }
-    } catch (e) {
-      _errorMessage = 'Error updating store: ${e.toString()}';
-      if (kDebugMode) {
-        print('Error updating store: $e');
-      }
-      return false;
-    } finally {
-      _isSubmitting = false;
-      notifyListeners();
-    }
-  }
-
+  // Dispose method
   @override
   void dispose() {
     _stores.clear();

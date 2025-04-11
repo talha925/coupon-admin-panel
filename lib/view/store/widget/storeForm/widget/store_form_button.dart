@@ -2,7 +2,7 @@ import 'package:coupon_admin_panel/model/category_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:coupon_admin_panel/view_model/store_view_model/store_view_model.dart';
-import 'package:coupon_admin_panel/view_model/services/image_picker_view_model_web.dart';
+import 'package:coupon_admin_panel/view_model/services/image_picker_view_model.dart';
 import 'package:coupon_admin_panel/model/store_model.dart';
 import 'package:coupon_admin_panel/utils/utils.dart';
 import 'package:coupon_admin_panel/utils/form_util.dart';
@@ -66,7 +66,6 @@ class StoreFormButton extends StatelessWidget {
 
   Future<void> _submitStore(
       BuildContext context, StoreViewModel storeViewModel) async {
-    // First validate the form using the built-in validators
     if (!formKey.currentState!.validate()) {
       Utils.toastMessage('Please fix validation errors in the form.');
       return;
@@ -79,30 +78,14 @@ class StoreFormButton extends StatelessWidget {
     String? uploadedImageUrl = store?.image.url;
 
     try {
-      // Log validation info to help debug URL validation issues
       Map<String, dynamic> storeData = {
         'trackingUrl': trackingUrlController.text.trim(),
         'heading': storeViewModel.selectedHeading,
       };
       FormUtils.logValidationInfo(storeData);
 
-      // Upload image if one is selected
-      if (imagePickerVM.selectedImageBytes != null) {
-        scaffoldMessenger.showSnackBar(
-          const SnackBar(content: Text('Uploading image...')),
-        );
-
-        uploadedImageUrl = await imagePickerVM.uploadImageToS3();
-        if (uploadedImageUrl.isEmpty) {
-          throw Exception('Image upload failed.');
-        }
-
-        scaffoldMessenger.hideCurrentSnackBar();
-      }
-
       final selectedHeading = storeViewModel.selectedHeading;
 
-      // Additional validation using FormUtils
       String? trackingUrlError =
           FormUtils.validateWebsite(trackingUrlController.text.trim());
       if (trackingUrlError != null) {
@@ -116,15 +99,9 @@ class StoreFormButton extends StatelessWidget {
         return;
       }
 
-      // Double check that the heading is one of the explicitly allowed values
       if (!FormUtils.ALLOWED_HEADINGS.contains(selectedHeading)) {
         _showError(scaffoldMessenger,
             'Invalid heading value. Please select one of the allowed options.');
-        return;
-      }
-
-      if (uploadedImageUrl == null || uploadedImageUrl.isEmpty) {
-        _showError(scaffoldMessenger, 'Store image is required.');
         return;
       }
 
@@ -135,7 +112,7 @@ class StoreFormButton extends StatelessWidget {
         shortDescription: shortDescriptionController.text.trim(),
         longDescription: longDescriptionController.text.trim(),
         image: StoreImage(
-          url: uploadedImageUrl,
+          url: uploadedImageUrl ?? '',
           alt: imagePickerVM.selectedImageAlt?.trim() ?? 'Store Logo',
         ),
         categories: selectedCategory != null
@@ -157,8 +134,8 @@ class StoreFormButton extends StatelessWidget {
       );
 
       final success = store != null
-          ? await storeViewModel.updateStore(storeDataObj)
-          : await storeViewModel.createStore(storeDataObj);
+          ? await storeViewModel.updateStore(storeDataObj, context)
+          : await storeViewModel.createStore(storeDataObj, context);
 
       scaffoldMessenger.hideCurrentSnackBar();
 
@@ -171,16 +148,14 @@ class StoreFormButton extends StatelessWidget {
             backgroundColor: Colors.green,
           ),
         );
-        _clearFormFields();
-        imagePickerVM.clearImage();
-      } else {
-        _showError(
-            scaffoldMessenger,
-            storeViewModel.errorMessage ??
-                'Failed to save store. Please try again.');
+        if (store == null) {
+          _clearFormFields(); // ✅ Only clear if it's a new store
+          imagePickerVM.clearImage();
+        }
       }
     } catch (e) {
       scaffoldMessenger.hideCurrentSnackBar();
+
       _showError(scaffoldMessenger, 'Unexpected error: ${e.toString()}');
     } finally {
       isSubmitting.value = false;
