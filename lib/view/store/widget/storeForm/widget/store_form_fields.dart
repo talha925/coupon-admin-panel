@@ -4,9 +4,9 @@ import 'package:coupon_admin_panel/utils/form_util.dart';
 import 'package:coupon_admin_panel/res/components/custom_textfild_component.dart';
 import 'package:coupon_admin_panel/res/components/image_picker_widget.dart';
 import 'package:provider/provider.dart';
-import 'package:coupon_admin_panel/view_model/services/image_picker_view_model_web.dart';
 import 'heading_dropdown_button.dart';
 import 'store_category_dropdown.dart';
+import 'package:coupon_admin_panel/view_model/services/image_picker_view_model.dart';
 
 class StoreFormFields extends StatelessWidget {
   final TextEditingController nameController;

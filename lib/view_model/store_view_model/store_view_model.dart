@@ -1,12 +1,12 @@
+import 'package:coupon_admin_panel/services/image_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:coupon_admin_panel/repository/store_repository.dart';
 import 'package:coupon_admin_panel/model/store_model.dart';
 import 'package:coupon_admin_panel/utils/form_util.dart';
-import 'package:coupon_admin_panel/view_model/services/image_picker_view_model_web.dart';
 
-import '../services/image_service.dart';
+import '../services/image_picker_view_model.dart';
 
 class StoreViewModel with ChangeNotifier {
   final StoreRepository _storeRepository = StoreRepository();
@@ -132,7 +132,7 @@ class StoreViewModel with ChangeNotifier {
       // Check if image is selected and uploaded
       if (imagePickerViewModel.selectedImageBytes != null) {
         // Only upload if it's not already uploaded
-        if (store.image?.url == null || store.image?.url?.isEmpty == true) {
+        if (store.image.url.isEmpty == true) {
           final imageUrl = await _imageService.uploadImageToS3(
             imagePickerViewModel.selectedImageBytes!,
             imagePickerViewModel.selectedImageName!,
@@ -179,7 +179,7 @@ class StoreViewModel with ChangeNotifier {
     final imagePickerVM =
         Provider.of<ImagePickerViewModel>(context, listen: false);
     String? newImageUrl;
-    final oldImageUrl = store.image?.url;
+    final oldImageUrl = store.image.url;
 
     try {
       // Upload new image if selected
@@ -195,9 +195,7 @@ class StoreViewModel with ChangeNotifier {
       await _storeRepository.updateStore(store.toJson());
 
       // Delete old image only after successful update
-      if (newImageUrl != null &&
-          oldImageUrl != null &&
-          oldImageUrl.isNotEmpty) {
+      if (newImageUrl != null && oldImageUrl.isNotEmpty) {
         try {
           await _imageService.deleteImage(oldImageUrl);
           debugPrint('Successfully deleted old image: $oldImageUrl');

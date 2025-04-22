@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:coupon_admin_panel/view_model/services/image_picker_view_model_web.dart';
+
+import '../../view_model/services/image_picker_view_model.dart';
 
 class ImagePickerWidget extends StatelessWidget {
   const ImagePickerWidget({super.key});

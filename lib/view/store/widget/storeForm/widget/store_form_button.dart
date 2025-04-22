@@ -1,11 +1,12 @@
 import 'package:coupon_admin_panel/model/category_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import 'package:coupon_admin_panel/view_model/store_view_model/store_view_model.dart';
 import 'package:coupon_admin_panel/view_model/services/image_picker_view_model.dart';
+
 import 'package:coupon_admin_panel/model/store_model.dart';
 import 'package:coupon_admin_panel/utils/utils.dart';
-import 'package:coupon_admin_panel/utils/form_util.dart';
 
 class StoreFormButton extends StatelessWidget {
   final GlobalKey<FormState> formKey;
@@ -78,30 +79,24 @@ class StoreFormButton extends StatelessWidget {
     String? uploadedImageUrl = store?.image.url;
 
     try {
-      Map<String, dynamic> storeData = {
-        'trackingUrl': trackingUrlController.text.trim(),
-        'heading': storeViewModel.selectedHeading,
-      };
-      FormUtils.logValidationInfo(storeData);
-
       final selectedHeading = storeViewModel.selectedHeading;
 
-      String? trackingUrlError =
-          FormUtils.validateWebsite(trackingUrlController.text.trim());
-      if (trackingUrlError != null) {
-        _showError(scaffoldMessenger, 'Tracking URL Error: $trackingUrlError');
-        return;
+      // Upload image in creation case
+      if (store == null && imagePickerVM.selectedImageBytes != null) {
+        try {
+          uploadedImageUrl = await imagePickerVM.uploadImageToS3();
+        } catch (e) {
+          _showError(scaffoldMessenger, 'Image upload failed: $e');
+          isSubmitting.value = false;
+          return;
+        }
       }
 
-      String? headingError = FormUtils.validateHeading(selectedHeading);
-      if (headingError != null) {
-        _showError(scaffoldMessenger, headingError);
-        return;
-      }
-
-      if (!FormUtils.ALLOWED_HEADINGS.contains(selectedHeading)) {
-        _showError(scaffoldMessenger,
-            'Invalid heading value. Please select one of the allowed options.');
+      // Ensure image is present on creation
+      if (store == null &&
+          (uploadedImageUrl == null || uploadedImageUrl.isEmpty)) {
+        _showError(scaffoldMessenger, 'Store image is required.');
+        isSubmitting.value = false;
         return;
       }
 
@@ -113,7 +108,8 @@ class StoreFormButton extends StatelessWidget {
         longDescription: longDescriptionController.text.trim(),
         image: StoreImage(
           url: uploadedImageUrl ?? '',
-          alt: imagePickerVM.selectedImageAlt?.trim() ?? 'Store Logo',
+          alt: imagePickerVM.selectedImageAlt?.trim() ??
+              '${nameController.text.trim()} Logo',
         ),
         categories: selectedCategory != null
             ? [CategoryData(id: selectedCategory!, name: '')]
@@ -129,9 +125,8 @@ class StoreFormButton extends StatelessWidget {
         heading: selectedHeading!,
       );
 
-      scaffoldMessenger.showSnackBar(
-        const SnackBar(content: Text('Saving store...')),
-      );
+      scaffoldMessenger
+          .showSnackBar(const SnackBar(content: Text('Saving store...')));
 
       final success = store != null
           ? await storeViewModel.updateStore(storeDataObj, context)
@@ -149,13 +144,12 @@ class StoreFormButton extends StatelessWidget {
           ),
         );
         if (store == null) {
-          _clearFormFields(); // ✅ Only clear if it's a new store
+          _clearFormFields();
           imagePickerVM.clearImage();
         }
       }
     } catch (e) {
       scaffoldMessenger.hideCurrentSnackBar();
-
       _showError(scaffoldMessenger, 'Unexpected error: ${e.toString()}');
     } finally {
       isSubmitting.value = false;
