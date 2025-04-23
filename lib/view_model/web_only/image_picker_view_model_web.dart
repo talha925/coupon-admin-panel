@@ -1,10 +1,27 @@
-// lib/view_model/services/image_picker_view_model_web.dart
 import 'dart:convert';
 import 'dart:typed_data';
-import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'package:js/js.dart'; // Import js_interop for browser-specific functionality
+
+// Interop class for JS functionality
+@JS()
+class FileUploadInputElement {
+  external void click();
+  external dynamic get files;
+  external set accept(String value);
+
+  // Declare onChange as a method instead of a setter
+  external void addEventListener(String event, Function callback);
+}
+
+@JS()
+class FileReader {
+  external void readAsArrayBuffer(dynamic file);
+  external dynamic get result;
+  external set onLoadEnd(dynamic callback);
+}
 
 class ImagePickerViewModel extends ChangeNotifier {
   Uint8List? _selectedImageBytes;
@@ -23,23 +40,24 @@ class ImagePickerViewModel extends ChangeNotifier {
   }
 
   Future<void> pickImage() async {
-    final uploadInput = html.FileUploadInputElement();
+    final uploadInput = FileUploadInputElement();
     uploadInput.accept = 'image/*';
     uploadInput.click();
     debugPrint('Web: Image picker is triggered');
 
-    uploadInput.onChange.listen((e) {
+    // Use addEventListener to bind the onChange event
+    uploadInput.addEventListener("change", allowInterop((e) {
       final files = uploadInput.files;
       if (files == null || files.isEmpty) return;
-      final reader = html.FileReader();
+      final reader = FileReader();
       reader.readAsArrayBuffer(files[0]);
-      reader.onLoadEnd.listen((_) {
+      reader.onLoadEnd = allowInterop((_) {
         _selectedImageBytes = reader.result as Uint8List;
         _selectedImageName = files[0].name;
         _errorMessage = null;
         notifyListeners();
       });
-    });
+    }));
   }
 
   Future<String> uploadImageToS3() async {

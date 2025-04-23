@@ -1,14 +1,12 @@
 // lib/services/image_service.dart (Assuming this path based on usage)
 
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart'; // For debugPrint
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
 class ImageService {
   // Define your base URL - using localhost for example
-  // TODO: Replace with your actual production backend URL
   // final String _baseUrl = 'https://coupon-app-backend.vercel.app/api/upload';
   final String _baseUrl = 'http://localhost:5000/api/upload';
 

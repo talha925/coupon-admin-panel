@@ -20,7 +20,6 @@ class StoreFormWidget extends StatefulWidget {
 class StoreFormWidgetState extends State<StoreFormWidget> {
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers for form fields
   late TextEditingController nameController;
   late TextEditingController shortDescriptionController;
   late TextEditingController longDescriptionController;
@@ -29,7 +28,6 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
   late TextEditingController metaDescriptionController;
   late TextEditingController metaKeywordsController;
 
-  // Focus Nodes for form fields
   late FocusNode nameFocusNode;
   late FocusNode shortDescriptionFocusNode;
   late FocusNode longDescriptionFocusNode;
@@ -38,22 +36,17 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
   late FocusNode metaDescriptionFocusNode;
   late FocusNode metaKeywordsFocusNode;
 
-  // ValueNotifier for category selection
   late ValueNotifier<String?> _selectedCategory;
-
-  // Toggles for Top Store and Editor's Choice
   late ValueNotifier<bool> topStore;
   late ValueNotifier<bool> editorsChoice;
 
-  bool isEditing = false; // To track whether it's edit mode
+  bool isEditing = false;
 
   @override
   void initState() {
     super.initState();
-
     isEditing = widget.store != null;
 
-    // ✅ Initialize controllers only once
     nameController = TextEditingController(text: widget.store?.name ?? '');
     shortDescriptionController =
         TextEditingController(text: widget.store?.shortDescription ?? '');
@@ -80,10 +73,10 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
         widget.store?.categories.isNotEmpty == true
             ? widget.store!.categories[0].id
             : null);
+
     topStore = ValueNotifier(widget.store?.isTopStore ?? false);
     editorsChoice = ValueNotifier(widget.store?.isEditorsChoice ?? false);
 
-    // ✅ Use Future.microtask() to avoid unnecessary rebuilds
     Future.microtask(() =>
         Provider.of<CategoryViewModel>(context, listen: false)
             .fetchCategories());
@@ -91,7 +84,6 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
 
   @override
   void dispose() {
-    // Dispose controllers
     nameController.dispose();
     shortDescriptionController.dispose();
     longDescriptionController.dispose();
@@ -100,7 +92,6 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
     metaDescriptionController.dispose();
     metaKeywordsController.dispose();
 
-    // Dispose focus nodes
     nameFocusNode.dispose();
     shortDescriptionFocusNode.dispose();
     longDescriptionFocusNode.dispose();
@@ -109,7 +100,6 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
     metaDescriptionFocusNode.dispose();
     metaKeywordsFocusNode.dispose();
 
-    // Dispose ValueNotifier
     _selectedCategory.dispose();
     topStore.dispose();
     editorsChoice.dispose();
@@ -124,7 +114,6 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ✅ Use Selector instead of Consumer for better rebuilds
           Selector<CategoryViewModel, ApiResponse<List<CategoryData>>>(
             selector: (_, viewModel) => viewModel.categoryResponse,
             builder: (context, categoryResponse, child) {
@@ -151,8 +140,6 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
             },
           ),
           const SizedBox(height: 20),
-
-          // ✅ Use Selector to only rebuild specific parts when needed
           Selector<StoreViewModel, Data?>(
             selector: (_, viewModel) => viewModel.selectedStore,
             builder: (context, selectedStore, child) {

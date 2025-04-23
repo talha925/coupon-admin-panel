@@ -58,8 +58,6 @@ class MainPage extends StatelessWidget {
         return const AddCategoryPage();
       case AdminPage.updateCategory:
         return const UpdateCategoryPage();
-      default:
-        return const Center(child: Text('Select a page'));
     }
   }
 }

@@ -2,7 +2,6 @@ import 'package:coupon_admin_panel/data/response/api_response.dart';
 import 'package:coupon_admin_panel/model/category_model.dart';
 import 'package:coupon_admin_panel/repository/category_repository.dart';
 import 'package:coupon_admin_panel/utils/utils.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class CategoryViewModel with ChangeNotifier {

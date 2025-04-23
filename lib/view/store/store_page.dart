@@ -47,7 +47,7 @@ class CreateStorePage extends StatelessWidget {
                     // Loading overlay
                     if (storeViewModel.isSubmitting)
                       Container(
-                        color: Colors.black.withOpacity(0.3),
+                        color: Colors.black.withValues(alpha: 0.1),
                         child: const Center(
                           child: CircularProgressIndicator(),
                         ),
