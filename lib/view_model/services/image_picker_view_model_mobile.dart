@@ -1,68 +1,53 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
-import 'package:js/js.dart'; // Import js_interop for browser-specific functionality
+import 'package:image_picker/image_picker.dart';
+import 'package:coupon_admin_panel/view_model/services/image_picker_view_model.dart';
 
-// Interop class for JS functionality
-@JS()
-class FileUploadInputElement {
-  external void click();
-  external dynamic get files;
-  external set accept(String value);
-
-  // Declare onChange as a method instead of a setter
-  external void addEventListener(String event, Function callback);
-}
-
-@JS()
-class FileReader {
-  external void readAsArrayBuffer(dynamic file);
-  external dynamic get result;
-  external set onLoadEnd(dynamic callback);
-}
-
-class ImagePickerViewModel extends ChangeNotifier {
+class ImagePickerViewModelImpl extends ImagePickerViewModel {
   Uint8List? _selectedImageBytes;
   String? _selectedImageName;
   String? _errorMessage;
   String? _selectedImageAlt;
 
+  @override
   Uint8List? get selectedImageBytes => _selectedImageBytes;
+  @override
   String? get selectedImageName => _selectedImageName;
+  @override
   String? get errorMessage => _errorMessage;
+  @override
   String? get selectedImageAlt => _selectedImageAlt;
 
+  @override
   set selectedImageAlt(String? value) {
     _selectedImageAlt = value;
     notifyListeners();
   }
 
+  @override
   Future<void> pickImage() async {
-    final uploadInput = FileUploadInputElement();
-    uploadInput.accept = 'image/*';
-    uploadInput.click();
-    debugPrint('Web: Image picker is triggered');
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
-    // Use addEventListener to bind the onChange event
-    uploadInput.addEventListener("change", allowInterop((e) {
-      final files = uploadInput.files;
-      if (files == null || files.isEmpty) return;
-      final reader = FileReader();
-      reader.readAsArrayBuffer(files[0]);
-      reader.onLoadEnd = allowInterop((_) {
-        _selectedImageBytes = reader.result as Uint8List;
-        _selectedImageName = files[0].name;
+      if (pickedFile != null) {
+        _selectedImageBytes = await pickedFile.readAsBytes();
+        _selectedImageName = pickedFile.name;
         _errorMessage = null;
         notifyListeners();
-      });
-    }));
+      }
+    } catch (e) {
+      _errorMessage = "Failed to pick image: ${e.toString()}";
+      notifyListeners();
+    }
   }
 
+  @override
   Future<String> uploadImageToS3() async {
     if (_selectedImageBytes == null || _selectedImageName == null) {
-      throw Exception("Store image is required");
+      throw Exception("Image is required");
     }
 
     final uri = Uri.parse('https://coupon-app-backend.vercel.app/api/upload');
@@ -82,11 +67,11 @@ class ImagePickerViewModel extends ChangeNotifier {
       final jsonResponse = json.decode(responseData);
       return jsonResponse['imageUrl'];
     } else {
-      final errorJson = json.decode(responseData);
-      throw Exception("Image upload failed: ${errorJson['error']}");
+      throw Exception("Image upload failed");
     }
   }
 
+  @override
   void clearImage() {
     _selectedImageBytes = null;
     _selectedImageName = null;

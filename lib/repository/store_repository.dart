@@ -115,9 +115,6 @@ class StoreRepository {
       final Map<String, dynamic> response =
           await _apiServices.getGetApiResponse(AppUrl.getStoresUrl);
 
-      // Print the raw response to verify categories
-      print("API Response: $response");
-
       if (response['status'] == 'success') {
         List<dynamic> storeData = response['data'];
 

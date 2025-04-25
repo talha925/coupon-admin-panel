@@ -150,6 +150,8 @@ class StoreFormButton extends StatelessWidget {
       }
     } catch (e) {
       scaffoldMessenger.hideCurrentSnackBar();
+      debugPrint('Showing error to user: $e'); // Print to console
+
       _showError(scaffoldMessenger, 'Unexpected error: ${e.toString()}');
     } finally {
       isSubmitting.value = false;

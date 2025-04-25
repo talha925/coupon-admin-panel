@@ -1,5 +1,6 @@
 import 'package:coupon_admin_panel/view/main/main_page.dart';
 import 'package:coupon_admin_panel/view_model/admin_view_model.dart';
+import 'package:coupon_admin_panel/view_model/services/image_picker_view_model_mobile.dart';
 import 'package:coupon_admin_panel/view_model/store_view_model/store_view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -25,7 +26,10 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AdminViewModel()),
         ChangeNotifierProvider(create: (_) => StoreViewModel()),
-        ChangeNotifierProvider(create: (_) => ImagePickerViewModel()),
+        ChangeNotifierProvider<ImagePickerViewModel>(
+          create: (_) =>
+              ImagePickerViewModelImpl(), // Correct concrete class based on platform
+        ),
         ChangeNotifierProvider(create: (_) => CouponViewModel()),
         ChangeNotifierProvider(create: (_) => CategoryViewModel()),
         ChangeNotifierProvider(

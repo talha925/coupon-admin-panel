@@ -129,31 +129,21 @@ class StoreViewModel with ChangeNotifier {
         Provider.of<ImagePickerViewModel>(context, listen: false);
 
     try {
-      // Check if image is selected and uploaded
       if (imagePickerViewModel.selectedImageBytes != null) {
-        // Only upload if it's not already uploaded
-        if (store.image.url.isEmpty == true) {
-          final imageUrl = await _imageService.uploadImageToS3(
-            imagePickerViewModel.selectedImageBytes!,
-            imagePickerViewModel.selectedImageName!,
-          );
-          store.image = StoreImage(url: imageUrl, alt: 'Store Image');
-        }
+        final imageUrl = await _imageService.uploadImageToS3(
+          imagePickerViewModel.selectedImageBytes!,
+          imagePickerViewModel.selectedImageName!,
+        );
+        store.image = StoreImage(url: imageUrl, alt: 'Store Image');
       }
 
-      // Create store with the image URL
-      final Map<String, dynamic> response =
-          await _storeRepository.createStore(store.toJson());
+      final response = await _storeRepository.createStore(store.toJson());
 
-      // Validate response
-      if (response.containsKey('data') &&
-          response['data'] is Map<String, dynamic> &&
-          response['data']['_id'] != null &&
-          response['data']['_id'].toString().isNotEmpty) {
+      if (response.containsKey('data') && response['data'] != null) {
         final newStore = Data.fromJson(response['data']);
         _stores.add(newStore);
         _filteredStores = List.from(_stores);
-        imagePickerViewModel.clearImage(); // Clear image after success
+        imagePickerViewModel.clearImage();
         _errorMessage = null;
         return true;
       } else {

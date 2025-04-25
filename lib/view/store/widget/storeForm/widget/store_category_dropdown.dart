@@ -17,79 +17,75 @@ class StoreCategoryDropdown extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer<CategoryViewModel>(
-      builder: (context, categoryViewModel, _) {
-        // Loading State
-        if (categoryViewModel.categoryResponse.status == Status.loading) {
-          return const Center(child: CircularProgressIndicator());
+        builder: (context, categoryViewModel, _) {
+      // Loading State
+      if (categoryViewModel.categoryResponse.status == Status.loading) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      // Error State
+      if (categoryViewModel.categoryResponse.status == Status.error) {
+        return Center(
+          child: Text(
+            'Error: ${categoryViewModel.categoryResponse.message}',
+            style: const TextStyle(color: Colors.red),
+          ),
+        );
+      }
+
+      // Completed State
+      if (categoryViewModel.categoryResponse.status == Status.completed &&
+          categoryViewModel.categoryResponse.data != null) {
+        var categories = categoryViewModel.categoryResponse.data!;
+
+        // No Categories Available
+        if (categories.isEmpty) {
+          return const Text('No categories available');
         }
 
-        // Error State
-        if (categoryViewModel.categoryResponse.status == Status.error) {
-          return Center(
-            child: Text(
-              'Error: ${categoryViewModel.categoryResponse.message}',
-              style: const TextStyle(color: Colors.red),
-            ),
-          );
-        }
+        // Map categories for dropdown
+        final items = categories.map((category) {
+          return {'id': category.id, 'name': category.name};
+        }).toList();
 
-        // Completed State
-        if (categoryViewModel.categoryResponse.status == Status.completed &&
-            categoryViewModel.categoryResponse.data != null) {
-          var categories = categoryViewModel.categoryResponse.data!;
-
-          // No Categories Available
-          if (categories.isEmpty) {
-            return const Text('No categories available');
-          }
-
-          // Debug: Print categories to see what data is available
-          print("Available Categories: $categories");
-
-          // Map categories for dropdown
-          final items = categories.map((category) {
-            return {'id': category.id, 'name': category.name};
-          }).toList();
-
-          return DropdownSearch<Map<String, String>>(
-            popupProps: const PopupProps.menu(
-              showSearchBox: true,
-              searchFieldProps: TextFieldProps(
-                decoration: InputDecoration(
-                  labelText: 'Search Category',
-                  border: OutlineInputBorder(),
-                ),
+        return DropdownSearch<Map<String, String>>(
+          popupProps: const PopupProps.menu(
+            showSearchBox: true,
+            searchFieldProps: TextFieldProps(
+              decoration: InputDecoration(
+                labelText: 'Search Category',
+                border: OutlineInputBorder(),
               ),
-              constraints: BoxConstraints(maxHeight: 200),
             ),
-            items: (String filter, LoadProps? loadProps) async {
-              return items; // Return the list of items asynchronously
-            },
-            itemAsString: (item) => item['name']!,
-            compareFn: (item1, item2) {
-              return item1['id'] == item2['id']; // Comparing by 'id'
-            },
-            dropdownBuilder: (context, selectedItem) {
-              return Text(selectedItem?['name'] ?? 'Select Category');
-            },
-            onChanged: (Map<String, String>? newValue) {
-              if (newValue != null && newValue['id']!.isNotEmpty) {
-                selectedCategoryId.value = newValue['id']; // Save ObjectId
-                onChanged(newValue['id']);
-              }
-            },
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please select a category';
-              }
-              return null;
-            },
-          );
-        }
+            constraints: BoxConstraints(maxHeight: 200),
+          ),
+          items: (String filter, LoadProps? loadProps) async {
+            return items; // Return the list of items asynchronously
+          },
+          itemAsString: (item) => item['name']!,
+          compareFn: (item1, item2) {
+            return item1['id'] == item2['id']; // Comparing by 'id'
+          },
+          dropdownBuilder: (context, selectedItem) {
+            return Text(selectedItem?['name'] ?? 'Select Category');
+          },
+          onChanged: (Map<String, String>? newValue) {
+            if (newValue != null && newValue['id']!.isNotEmpty) {
+              selectedCategoryId.value = newValue['id']; // Save ObjectId
+              onChanged(newValue['id']);
+            }
+          },
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please select a category';
+            }
+            return null;
+          },
+        );
+      }
 
-        // Default State
-        return const SizedBox.shrink();
-      },
-    );
+      // Default State
+      return const SizedBox.shrink();
+    });
   }
 }

@@ -7,8 +7,8 @@ import 'package:http_parser/http_parser.dart';
 
 class ImageService {
   // Define your base URL - using localhost for example
-  // final String _baseUrl = 'https://coupon-app-backend.vercel.app/api/upload';
-  final String _baseUrl = 'http://localhost:5000/api/upload';
+  final String _baseUrl = 'https://coupon-app-backend.vercel.app/api/upload';
+  // final String _baseUrl = 'http://localhost:5000/api/upload';
 
   /// Uploads an image to the server and returns the image URL.
   Future<String> uploadImageToS3(Uint8List imageBytes, String imageName) async {
