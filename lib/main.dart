@@ -1,7 +1,9 @@
+import 'package:coupon_admin_panel/res/theme/app_theme.dart';
 import 'package:coupon_admin_panel/view/main/main_page.dart';
 import 'package:coupon_admin_panel/view_model/admin_view_model.dart';
 import 'package:coupon_admin_panel/view_model/services/image_picker_view_model_mobile.dart';
 import 'package:coupon_admin_panel/view_model/store_view_model/store_view_model.dart';
+import 'package:coupon_admin_panel/view_model/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
@@ -24,6 +26,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => AdminViewModel()),
         ChangeNotifierProvider(create: (_) => StoreViewModel()),
         ChangeNotifierProvider<ImagePickerViewModel>(
@@ -35,14 +38,17 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
             create: (_) => StoreSelectionCategoryViewModel()),
       ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Flutter Demo',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: false,
-        ),
-        home: const MainPage(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            title: 'Coupon Admin Panel',
+            theme: AppTheme.lightTheme(),
+            darkTheme: AppTheme.darkTheme(),
+            themeMode: themeProvider.themeMode,
+            home: const MainPage(),
+          );
+        },
       ),
     );
   }

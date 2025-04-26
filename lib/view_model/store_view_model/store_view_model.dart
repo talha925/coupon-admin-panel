@@ -46,6 +46,11 @@ class StoreViewModel with ChangeNotifier {
     notifyListeners();
   }
 
+  void clearError() {
+    _errorMessage = null;
+    notifyListeners();
+  }
+
   void selectStore(Data? store) {
     _selectedStore = store;
     if (store != null && store.heading.isNotEmpty) {

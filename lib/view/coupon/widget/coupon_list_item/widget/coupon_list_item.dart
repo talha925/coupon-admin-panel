@@ -62,7 +62,7 @@ class CouponListItem extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: theme.primaryColor.withValues(alpha: 0.1),
+                    color: theme.primaryColor.withAlpha(26),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(Icons.store, size: 24, color: theme.primaryColor),
@@ -167,10 +167,10 @@ class CouponListItem extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: theme.primaryColor.withValues(alpha: 0.1),
+                    color: theme.primaryColor.withAlpha(26),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: theme.primaryColor.withValues(alpha: 0.1),
+                      color: theme.primaryColor.withAlpha(26),
                     ),
                   ),
                   child: Text(

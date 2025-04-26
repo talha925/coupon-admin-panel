@@ -39,7 +39,7 @@ dependencies:
   shared_preferences: ^2.3.2
   http: ^1.2.2
   another_flushbar: ^1.12.30
-  fluttertoast: ^8.2.8
+  fluttertoast: ^8.2.12
   image_picker: ^1.1.2
   file_picker: ^10.1.2
   http_parser: ^4.0.2
@@ -50,6 +50,7 @@ dependencies:
   webdev: ^3.7.1
   js_interop: ^0.0.1
   image_picker_for_web: ^3.0.6
+  flutter_toastr: ^1.0.3
 
 dev_dependencies:
   flutter_test:

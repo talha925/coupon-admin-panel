@@ -45,6 +45,9 @@ class StoreSearchDropdown extends StatelessWidget {
           (item) => item['id'] == selectedStoreId.value,
           orElse: () => {'id': '', 'name': 'Select a Store'},
         ),
+        compareFn: (Map<String, String>? a, Map<String, String>? b) {
+          return a?['id'] == b?['id'];
+        },
         decoratorProps: DropDownDecoratorProps(
           decoration: InputDecoration(
             labelText: 'Select Store',
