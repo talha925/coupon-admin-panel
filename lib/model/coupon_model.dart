@@ -80,6 +80,15 @@ class CouponData {
     );
   }
 
+  static String _validateStoreId(dynamic storeField) {
+    if (storeField == null) {
+      throw FormatException('Store ID is missing in coupon data');
+    }
+    if (storeField is String) return storeField;
+    if (storeField is Map) return storeField['_id'] ?? '';
+    return storeField.toString();
+  }
+
   factory CouponData.fromJson(Map<String, dynamic> json) => CouponData(
         id: json["_id"],
         offerDetails: json["offerDetails"],
@@ -91,7 +100,7 @@ class CouponData {
         lastAccessed: json["lastAccessed"] == null
             ? null
             : DateTime.parse(json["lastAccessed"]),
-        storeId: json["storeId"],
+        storeId: _validateStoreId(json["store"]),
       );
 
   Map<String, dynamic> toJson() => {

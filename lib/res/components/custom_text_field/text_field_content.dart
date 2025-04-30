@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:coupon_admin_panel/utils/utils.dart';
 import 'package:coupon_admin_panel/res/theme/app_dimensions.dart';
@@ -136,6 +137,31 @@ class TextFieldContent extends StatelessWidget {
               }
             },
             maxLines: widget.maxLines ?? 1,
+            enableInteractiveSelection: true,
+            enableSuggestions: true,
+            autocorrect: true,
+            onTap: () {
+              if (widget.focusNode != null && !widget.focusNode!.hasFocus) {
+                FocusScope.of(context).requestFocus(widget.focusNode);
+              }
+            },
+            onEditingComplete: () {
+              if (widget.nextFocusNode != null) {
+                // Move to next focus node if provided
+                FocusScope.of(context).requestFocus(widget.nextFocusNode);
+              } else {
+                // Otherwise clear focus
+                FocusScope.of(context).unfocus();
+              }
+            },
+            onTapOutside: (_) {
+              if (widget.focusNode != null && widget.focusNode!.hasFocus) {
+                widget.focusNode!.unfocus();
+              }
+            },
+            inputFormatters: [
+              LengthLimitingTextInputFormatter(500),
+            ],
           ),
         ),
       ],

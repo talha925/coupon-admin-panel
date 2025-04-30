@@ -1,28 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:coupon_admin_panel/view_model/coupon_view_model/coupon_view_model.dart';
-import 'package:coupon_admin_panel/utils/utils.dart';
+import 'package:coupon_admin_panel/view_model/coupon_view_model/coupon_form_view_model.dart';
 import 'package:coupon_admin_panel/res/components/custom_textfild_component.dart';
 import 'package:coupon_admin_panel/utils/form_util.dart';
 import 'package:coupon_admin_panel/model/store_model.dart';
 import 'package:coupon_admin_panel/view_model/store_view_model/store_view_model.dart';
 
-class CouponFormWidget extends StatefulWidget {
+class CouponFormWidget extends StatelessWidget {
   const CouponFormWidget({super.key});
 
   @override
-  CouponFormWidgetState createState() => CouponFormWidgetState();
+  Widget build(BuildContext context) {
+    // Initialize the CouponFormViewModel using Provider
+    return ChangeNotifierProvider(
+      create: (_) => CouponFormViewModel(),
+      child: const _CouponFormContent(),
+    );
+  }
 }
 
-class CouponFormWidgetState extends State<CouponFormWidget> {
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController _codeController = TextEditingController();
-  final TextEditingController _offerDetailsController = TextEditingController();
+class _CouponFormContent extends StatefulWidget {
+  const _CouponFormContent();
 
-  String? _selectedStoreId;
-  bool _isCodeSelected = false;
-  bool _isActiveSelected = true;
-  bool _isFeaturedForHome = false;
+  @override
+  _CouponFormContentState createState() => _CouponFormContentState();
+}
+
+class _CouponFormContentState extends State<_CouponFormContent> {
+  // Create separate focus nodes for input fields
+  final FocusNode _offerDetailsFocusNode = FocusNode();
+  final FocusNode _codeFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -36,18 +44,20 @@ class CouponFormWidgetState extends State<CouponFormWidget> {
 
   @override
   void dispose() {
-    _codeController.dispose();
-    _offerDetailsController.dispose();
+    _offerDetailsFocusNode.dispose();
+    _codeFocusNode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final formViewModel = Provider.of<CouponFormViewModel>(context);
+
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
-          key: _formKey,
+          key: formViewModel.formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -57,11 +67,11 @@ class CouponFormWidgetState extends State<CouponFormWidget> {
               ),
               const SizedBox(height: 15),
 
-              // Offer Details Field
+              // Offer Details Field with explicit focus node
               CustomTextFormField(
-                controller: _offerDetailsController,
+                controller: formViewModel.offerDetailsController,
+                focusNode: _offerDetailsFocusNode,
                 labelText: 'Offer Details',
-                // maxLines: 3,
                 validator: (value) => FormUtils.validateRequiredField(
                   value,
                   errorMessage: 'Please enter offer details',
@@ -74,24 +84,22 @@ class CouponFormWidgetState extends State<CouponFormWidget> {
                 children: [
                   Radio(
                     value: true,
-                    groupValue: _isCodeSelected,
+                    groupValue: formViewModel.isCodeSelected,
                     onChanged: (bool? value) {
-                      setState(() {
-                        _isCodeSelected = true;
-                        _isActiveSelected = false;
-                      });
+                      // Remove focus before changing the UI to prevent keyboard issues
+                      FocusManager.instance.primaryFocus?.unfocus();
+                      formViewModel.setIsCodeSelected(true);
                     },
                   ),
                   const Text("Code"),
                   const SizedBox(width: 20),
                   Radio(
                     value: false,
-                    groupValue: _isCodeSelected,
+                    groupValue: formViewModel.isCodeSelected,
                     onChanged: (bool? value) {
-                      setState(() {
-                        _isCodeSelected = false;
-                        _isActiveSelected = true;
-                      });
+                      // Remove focus before changing the UI to prevent keyboard issues
+                      FocusManager.instance.primaryFocus?.unfocus();
+                      formViewModel.setIsActiveSelected(true);
                     },
                   ),
                   const Text("Active"),
@@ -99,11 +107,12 @@ class CouponFormWidgetState extends State<CouponFormWidget> {
               ),
 
               // Code Field (only if code is selected)
-              if (_isCodeSelected)
+              if (formViewModel.isCodeSelected)
                 CustomTextFormField(
-                  controller: _codeController,
+                  controller: formViewModel.codeController,
+                  focusNode: _codeFocusNode,
                   labelText: 'Enter Code',
-                  validator: (value) => _isCodeSelected
+                  validator: (value) => formViewModel.isCodeSelected
                       ? FormUtils.validateRequiredField(
                           value,
                           errorMessage: 'Please enter the coupon code',
@@ -115,9 +124,11 @@ class CouponFormWidgetState extends State<CouponFormWidget> {
               // Featured For Home Switch
               SwitchListTile(
                 title: const Text("Featured For Home"),
-                value: _isFeaturedForHome,
+                value: formViewModel.isFeaturedForHome,
                 onChanged: (value) {
-                  setState(() => _isFeaturedForHome = value);
+                  // Remove focus before changing the UI to prevent keyboard issues
+                  FocusManager.instance.primaryFocus?.unfocus();
+                  formViewModel.setIsFeaturedForHome(value);
                 },
               ),
 
@@ -134,16 +145,16 @@ class CouponFormWidgetState extends State<CouponFormWidget> {
 
                   return DropdownButtonFormField<String>(
                     hint: const Text('Choose Store'),
-                    value: _selectedStoreId,
+                    value: formViewModel.selectedStoreId,
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       contentPadding:
                           EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
                     onChanged: (String? newValue) {
-                      setState(() {
-                        _selectedStoreId = newValue;
-                      });
+                      // Remove focus before changing the UI to prevent keyboard issues
+                      FocusManager.instance.primaryFocus?.unfocus();
+                      formViewModel.setSelectedStoreId(newValue);
                     },
                     items: storeViewModel.stores.map((Data store) {
                       return DropdownMenuItem<String>(
@@ -171,8 +182,12 @@ class CouponFormWidgetState extends State<CouponFormWidget> {
                     child: couponViewModel.isSubmitting
                         ? const Center(child: CircularProgressIndicator())
                         : ElevatedButton(
-                            onPressed: () =>
-                                _submitForm(context, couponViewModel),
+                            onPressed: () {
+                              // Remove focus before submission to prevent keyboard issues
+                              FocusManager.instance.primaryFocus?.unfocus();
+                              formViewModel.submitForm(
+                                  context, couponViewModel);
+                            },
                             child: const Text('Save Your Coupon'),
                           ),
                   );
@@ -183,43 +198,5 @@ class CouponFormWidgetState extends State<CouponFormWidget> {
         ),
       ),
     );
-  }
-
-  Future<void> _submitForm(
-      BuildContext context, CouponViewModel couponViewModel) async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    final couponData = {
-      "offerDetails": _offerDetailsController.text,
-      "code": _isCodeSelected ? _codeController.text : '',
-      "store": _selectedStoreId, // just ID (string)
-      "active": _isActiveSelected,
-      "featuredForHome": _isFeaturedForHome,
-    };
-
-    try {
-      final success = await couponViewModel.createCoupon(couponData);
-      if (success) {
-        Utils.toastMessage('Coupon created successfully!');
-        _clearForm();
-      } else {
-        Utils.toastMessage('Failed to create coupon. Please try again.');
-      }
-    } catch (e) {
-      Utils.toastMessage('Error creating coupon: ${e.toString()}');
-    }
-  }
-
-  void _clearForm() {
-    _codeController.clear();
-    _offerDetailsController.clear();
-    setState(() {
-      _selectedStoreId = null;
-      _isCodeSelected = false;
-      _isActiveSelected = true;
-      _isFeaturedForHome = false;
-    });
   }
 }

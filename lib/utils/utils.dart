@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fluttertoast/fluttertoast.dart';
+import 'package:coupon_admin_panel/utils/platform_toast.dart';
 
 class Utils {
   static void fieldFocusChange(
@@ -9,11 +9,8 @@ class Utils {
   }
 
   static void toastMessage(String message) {
-    Fluttertoast.showToast(
-      msg: message,
-      backgroundColor: Colors.black,
-      textColor: Colors.white,
-    );
+    // Use platform-agnostic toast that works on Windows and Web
+    PlatformToast.show(message);
   }
 
   static void flushBarErrorMessage(String message, BuildContext context) {

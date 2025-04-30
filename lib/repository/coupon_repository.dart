@@ -7,6 +7,25 @@ import 'package:coupon_admin_panel/res/app_url.dart';
 class CouponRepository {
   final BaseAPiServices _apiServices = NetworkApiServices();
 
+// Fetch coupons by store with pagination
+  Future<Map<String, dynamic>> fetchCouponsByStore({
+    required String storeId,
+    required int page,
+    required int limit,
+    required bool active,
+    required bool isValid,
+  }) async {
+    try {
+      final response = await _apiServices.getGetApiResponse(
+        '${AppUrl.getCouponsUrl}/store/$storeId?page=$page&limit=$limit&active=$active&isValid=$isValid',
+      );
+
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
 // createCoupon
   Future<dynamic> createCoupon(Map<String, dynamic> data) async {
     try {

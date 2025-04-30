@@ -38,36 +38,114 @@ class CouponViewModel with ChangeNotifier {
     notifyListeners();
   }
 
+  int _currentPage = 1;
+  int get currentPage => _currentPage;
+
+  int _totalPages = 0;
+  int get totalPages => _totalPages;
+
   // Update selected store for filtering
   void updateSelectedStore(String? newStoreId) {
-    _selectedStoreId = newStoreId;
-    _filterCoupons();
+    if (newStoreId == null || newStoreId.isEmpty) {
+      print("Error: Store ID is null or empty");
+      _errorMessage = 'Store ID is missing, cannot load coupons.';
+    } else {
+      _selectedStoreId = newStoreId;
+      _filterCoupons(); // Apply filtering logic
+      print('Selected Store ID: $_selectedStoreId');
+    }
     notifyListeners();
   }
 
-  // Filter coupons based on selected store
+// In CouponViewModel.dart
   void _filterCoupons() {
     if (_selectedStoreId == null || _selectedStoreId!.isEmpty) {
-      _filteredCoupons = List.from(_coupons);
+      _filteredCoupons =
+          List.from(_coupons); // Show all if no store is selected
     } else {
       _filteredCoupons = _coupons
-          .where((coupon) => coupon.storeId == _selectedStoreId)
+          .where((coupon) =>
+              coupon.storeId == _selectedStoreId) // Make sure storeId matches
           .toList();
+    }
+    notifyListeners();
+  }
+
+  Future<void> fetchCouponsForStore({
+    required String storeId,
+    int page = 1,
+    int limit = 10,
+  }) async {
+    try {
+      _isFetching = true;
+      notifyListeners();
+
+      final response = await _couponRepository.fetchCouponsByStore(
+        storeId: storeId,
+        page: page,
+        limit: limit,
+        active: true,
+        isValid: true,
+      );
+
+      // Always clear previous coupons before adding new ones
+      _coupons.clear();
+      _filteredCoupons.clear();
+
+      final newCoupons = (response['data'] as List)
+          .map((json) => CouponData.fromJson(json))
+          .toList();
+
+      _coupons.addAll(newCoupons);
+      _totalPages = response['metadata']['totalPages'];
+      _currentPage = page;
+
+      print('📚 Total coupons: ${_coupons.length}');
+      _filterCoupons();
+    } catch (e) {
+      print('Pagination error: ${e.toString()}');
+    } finally {
+      _isFetching = false;
+      notifyListeners();
     }
   }
 
-  // Search coupons by code or offer details
-  void searchCoupons(String query) {
-    if (query.isEmpty) {
-      _filterCoupons();
-    } else {
-      final lowercaseQuery = query.toLowerCase();
-      _filteredCoupons = _coupons.where((coupon) {
-        return coupon.code.toLowerCase().contains(lowercaseQuery) ||
-            coupon.offerDetails.toLowerCase().contains(lowercaseQuery);
-      }).toList();
+  // For Next Page
+  Future<void> goToNextPage() async {
+    if (_selectedStoreId == null || _selectedStoreId!.isEmpty) {
+      print("Cannot paginate - no store selected");
+      _errorMessage = 'Store ID is missing, cannot load coupons.';
+      return;
     }
-    notifyListeners();
+
+    if (_currentPage < _totalPages) {
+      print(
+          "Next page requested. Current page: $_currentPage, Total pages: $_totalPages");
+      await fetchCouponsForStore(
+        storeId: _selectedStoreId!,
+        page: _currentPage + 1,
+      );
+    } else {
+      print("Already on the last page");
+    }
+  }
+
+// For Previous Page
+  Future<void> goToPreviousPage() async {
+    if (_selectedStoreId == null || _selectedStoreId!.isEmpty) {
+      print("Cannot paginate - no store selected");
+      return;
+    }
+
+    if (_currentPage > 1) {
+      print("Previous page requested. Current page: $_currentPage");
+      await fetchCouponsForStore(
+        storeId: _selectedStoreId!,
+        page: _currentPage - 1,
+      );
+    } else {
+      print("Already on the first page.");
+    }
   }
 
   // Fetch coupons

@@ -25,8 +25,13 @@ class _CouponListByStorePageState extends State<CouponListByStorePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final storeVM = Provider.of<StoreViewModel>(context, listen: false);
       final couponVM = Provider.of<CouponViewModel>(context, listen: false);
-      storeVM.getStores();
-      couponVM.getCoupons();
+
+      storeVM.getStores(); // Fetch stores initially
+
+      // Ensure fetchCouponsForStore is called after store is selected
+      if (_selectedStoreId.value != null) {
+        couponVM.fetchCouponsForStore(storeId: _selectedStoreId.value!);
+      }
     });
   }
 
@@ -50,7 +55,14 @@ class _CouponListByStorePageState extends State<CouponListByStorePage> {
                     orElse: () => storeVM.stores.first,
                   );
                   storeVM.selectStore(selectedStore);
-                  couponVM.updateSelectedStore(storeId);
+                  _selectedStoreId.value = storeId;
+
+                  // Update CouponViewModel's selected store ID
+                  couponVM.updateSelectedStore(storeId); // Add this line
+
+                  if (storeId != null && storeId.isNotEmpty) {
+                    couponVM.fetchCouponsForStore(storeId: storeId);
+                  }
                 },
               ),
             ),
@@ -101,6 +113,27 @@ class _CouponListByStorePageState extends State<CouponListByStorePage> {
                           },
                         ),
             ),
+            // Pagination controls
+            // In CouponListByStorePage.dart
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: couponVM.currentPage > 1
+                      ? couponVM.goToPreviousPage
+                      : null,
+                ),
+                Text('Page ${couponVM.currentPage} of ${couponVM.totalPages}'),
+                IconButton(
+                  icon: const Icon(Icons.arrow_forward),
+                  onPressed: couponVM.currentPage < couponVM.totalPages
+                      ? couponVM.goToNextPage
+                      : null,
+                ),
+              ],
+            )
           ],
         ),
       ),
