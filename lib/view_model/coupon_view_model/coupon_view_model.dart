@@ -44,21 +44,32 @@ class CouponViewModel with ChangeNotifier {
   int _totalPages = 0;
   int get totalPages => _totalPages;
 
+  // Track active fetch operation
+  bool _fetchInProgress = false;
+  String? _lastFetchedStoreId;
+
   // Update selected store for filtering
-  void updateSelectedStore(String? newStoreId) {
+  void updateSelectedStore(String? newStoreId, {bool notify = true}) {
     if (newStoreId == null || newStoreId.isEmpty) {
       print("Error: Store ID is null or empty");
       _errorMessage = 'Store ID is missing, cannot load coupons.';
     } else {
-      _selectedStoreId = newStoreId;
-      _filterCoupons(); // Apply filtering logic
-      print('Selected Store ID: $_selectedStoreId');
+      // Only update and notify if the store ID actually changed
+      if (_selectedStoreId != newStoreId) {
+        _selectedStoreId = newStoreId;
+        _filterCoupons(
+            notify: false); // Apply filtering logic without notifying
+        print('Selected Store ID: $_selectedStoreId');
+
+        if (notify) {
+          notifyListeners();
+        }
+      }
     }
-    notifyListeners();
   }
 
-// In CouponViewModel.dart
-  void _filterCoupons() {
+  // Optimized to handle notification control
+  void _filterCoupons({bool notify = true}) {
     if (_selectedStoreId == null || _selectedStoreId!.isEmpty) {
       _filteredCoupons =
           List.from(_coupons); // Show all if no store is selected
@@ -68,15 +79,33 @@ class CouponViewModel with ChangeNotifier {
               coupon.storeId == _selectedStoreId) // Make sure storeId matches
           .toList();
     }
-    notifyListeners();
+
+    if (notify) {
+      notifyListeners();
+    }
   }
 
   Future<void> fetchCouponsForStore({
     required String storeId,
     int page = 1,
     int limit = 10,
+    bool updateStore = true,
   }) async {
+    // Don't refetch for the same store and page if already fetching
+    if (_fetchInProgress &&
+        _lastFetchedStoreId == storeId &&
+        _currentPage == page) {
+      return;
+    }
+
     try {
+      // Update the selected store ID if requested
+      if (updateStore && _selectedStoreId != storeId) {
+        updateSelectedStore(storeId, notify: false); // Update without notifying
+      }
+
+      _fetchInProgress = true;
+      _lastFetchedStoreId = storeId;
       _isFetching = true;
       notifyListeners();
 
@@ -87,6 +116,11 @@ class CouponViewModel with ChangeNotifier {
         active: true,
         isValid: true,
       );
+
+      // Check if this response is still relevant (no newer request has started)
+      if (_lastFetchedStoreId != storeId) {
+        return; // Ignore this response, as a newer request is in progress
+      }
 
       // Always clear previous coupons before adding new ones
       _coupons.clear();
@@ -104,7 +138,9 @@ class CouponViewModel with ChangeNotifier {
       _filterCoupons();
     } catch (e) {
       print('Pagination error: ${e.toString()}');
+      _errorMessage = 'Error fetching coupons: ${e.toString()}';
     } finally {
+      _fetchInProgress = false;
       _isFetching = false;
       notifyListeners();
     }

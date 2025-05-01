@@ -51,7 +51,12 @@ class StoreViewModel with ChangeNotifier {
     notifyListeners();
   }
 
-  void selectStore(Data? store) {
+  void selectStore(Data? store, {bool notify = true}) {
+    // Don't notify if the same store is selected again
+    if (_selectedStore?.id == store?.id) {
+      return;
+    }
+
     _selectedStore = store;
     if (store != null) {
       _isTopStore = store.isTopStore;
@@ -62,7 +67,10 @@ class StoreViewModel with ChangeNotifier {
         }
       }
     }
-    notifyListeners();
+
+    if (notify) {
+      notifyListeners();
+    }
   }
 
   /// Reset the selected store and form state for creating a new store

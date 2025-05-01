@@ -59,11 +59,11 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => AdminViewModel()),
-        ChangeNotifierProvider(create: (_) => StoreViewModel()),
+        ChangeNotifierProvider(create: (_) => StoreViewModel(), lazy: false),
         ChangeNotifierProvider<ImagePickerViewModel>(
           create: (_) => ImagePickerViewModelImpl(),
         ),
-        ChangeNotifierProvider(create: (_) => CouponViewModel()),
+        ChangeNotifierProvider(create: (_) => CouponViewModel(), lazy: false),
         ChangeNotifierProvider(create: (_) => CategoryViewModel()),
         ChangeNotifierProvider(
             create: (_) => StoreSelectionCategoryViewModel()),
