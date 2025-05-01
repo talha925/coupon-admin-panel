@@ -37,7 +37,11 @@ class _CouponFormContentState extends State<_CouponFormContent> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        Provider.of<StoreViewModel>(context, listen: false).getStores();
+        final storeVM = Provider.of<StoreViewModel>(context, listen: false);
+        // Only fetch stores if the list is empty
+        if (storeVM.stores.isEmpty) {
+          storeVM.getStores();
+        }
       }
     });
   }
@@ -135,12 +139,23 @@ class _CouponFormContentState extends State<_CouponFormContent> {
               // Store Dropdown
               Consumer<StoreViewModel>(
                 builder: (context, storeViewModel, child) {
-                  if (storeViewModel.isFetching) {
-                    return const Center(child: CircularProgressIndicator());
+                  // Only show a loading indicator if we're fetching and have no stores
+                  if (storeViewModel.isFetching &&
+                      storeViewModel.stores.isEmpty) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16.0),
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
                   }
 
                   if (storeViewModel.stores.isEmpty) {
-                    return const Text('No stores available');
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16.0),
+                      child: Text(
+                          'No stores available. Please add a store first.'),
+                    );
                   }
 
                   return DropdownButtonFormField<String>(
@@ -151,11 +166,13 @@ class _CouponFormContentState extends State<_CouponFormContent> {
                       contentPadding:
                           EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     ),
-                    onChanged: (String? newValue) {
-                      // Remove focus before changing the UI to prevent keyboard issues
-                      FocusManager.instance.primaryFocus?.unfocus();
-                      formViewModel.setSelectedStoreId(newValue);
-                    },
+                    onChanged: storeViewModel.isFetching
+                        ? null // Disable dropdown while fetching
+                        : (String? newValue) {
+                            // Remove focus before changing the UI to prevent keyboard issues
+                            FocusManager.instance.primaryFocus?.unfocus();
+                            formViewModel.setSelectedStoreId(newValue);
+                          },
                     items: storeViewModel.stores.map((Data store) {
                       return DropdownMenuItem<String>(
                         value: store.id,
@@ -179,17 +196,30 @@ class _CouponFormContentState extends State<_CouponFormContent> {
                 builder: (context, couponViewModel, child) {
                   return SizedBox(
                     width: double.infinity,
-                    child: couponViewModel.isSubmitting
-                        ? const Center(child: CircularProgressIndicator())
-                        : ElevatedButton(
-                            onPressed: () {
+                    child: ElevatedButton(
+                      onPressed: couponViewModel.isSubmitting
+                          ? null // Disable button while submitting
+                          : () {
                               // Remove focus before submission to prevent keyboard issues
                               FocusManager.instance.primaryFocus?.unfocus();
                               formViewModel.submitForm(
                                   context, couponViewModel);
                             },
-                            child: const Text('Save Your Coupon'),
-                          ),
+                      child: couponViewModel.isSubmitting
+                          ? const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2.0)),
+                                SizedBox(width: 8),
+                                Text('Saving...'),
+                              ],
+                            )
+                          : const Text('Save Your Coupon'),
+                    ),
                   );
                 },
               ),

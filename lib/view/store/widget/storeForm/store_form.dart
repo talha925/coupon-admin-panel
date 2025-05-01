@@ -9,8 +9,10 @@ import 'package:coupon_admin_panel/data/response/api_response.dart';
 import 'package:coupon_admin_panel/model/category_model.dart';
 
 class StoreFormWidget extends StatefulWidget {
-  final Data? store; // If provided, it's in edit mode
+  // This property may not be needed anymore since we'll use the ViewModel directly
+  final Data? store;
 
+  // Constructor without the store parameter, as it can be obtained from ViewModel
   const StoreFormWidget({super.key, this.store});
 
   @override
@@ -45,21 +47,15 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
   @override
   void initState() {
     super.initState();
-    isEditing = widget.store != null;
 
-    nameController = TextEditingController(text: widget.store?.name ?? '');
-    shortDescriptionController =
-        TextEditingController(text: widget.store?.shortDescription ?? '');
-    longDescriptionController =
-        TextEditingController(text: widget.store?.longDescription ?? '');
-    trackingUrlController =
-        TextEditingController(text: widget.store?.trackingUrl ?? '');
-    metaTitleController =
-        TextEditingController(text: widget.store?.seo.metaTitle ?? '');
-    metaDescriptionController =
-        TextEditingController(text: widget.store?.seo.metaDescription ?? '');
-    metaKeywordsController =
-        TextEditingController(text: widget.store?.seo.metaKeywords ?? '');
+    // Initialize with empty controllers
+    nameController = TextEditingController();
+    shortDescriptionController = TextEditingController();
+    longDescriptionController = TextEditingController();
+    trackingUrlController = TextEditingController();
+    metaTitleController = TextEditingController();
+    metaDescriptionController = TextEditingController();
+    metaKeywordsController = TextEditingController();
 
     nameFocusNode = FocusNode();
     shortDescriptionFocusNode = FocusNode();
@@ -69,17 +65,46 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
     metaDescriptionFocusNode = FocusNode();
     metaKeywordsFocusNode = FocusNode();
 
-    _selectedCategory = ValueNotifier<String?>(
-        widget.store?.categories.isNotEmpty == true
-            ? widget.store!.categories[0].id
-            : null);
+    _selectedCategory = ValueNotifier<String?>(null);
+    topStore = ValueNotifier(false);
+    editorsChoice = ValueNotifier(false);
 
-    topStore = ValueNotifier(widget.store?.isTopStore ?? false);
-    editorsChoice = ValueNotifier(widget.store?.isEditorsChoice ?? false);
-
+    // Fetch categories immediately
     Future.microtask(() =>
         Provider.of<CategoryViewModel>(context, listen: false)
             .fetchCategories());
+
+    // Set up post-frame callback to update fields with selected store data if available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateFieldsFromSelectedStore();
+    });
+  }
+
+  void _updateFieldsFromSelectedStore() {
+    // Get the selected store from ViewModel
+    final selectedStore =
+        Provider.of<StoreViewModel>(context, listen: false).selectedStore;
+
+    if (selectedStore != null) {
+      // We're in edit mode
+      isEditing = true;
+
+      // Update all controllers with values from the selected store
+      nameController.text = selectedStore.name;
+      shortDescriptionController.text = selectedStore.shortDescription;
+      longDescriptionController.text = selectedStore.longDescription;
+      trackingUrlController.text = selectedStore.trackingUrl;
+      metaTitleController.text = selectedStore.seo.metaTitle;
+      metaDescriptionController.text = selectedStore.seo.metaDescription;
+      metaKeywordsController.text = selectedStore.seo.metaKeywords;
+
+      // Update value notifiers
+      if (selectedStore.categories.isNotEmpty) {
+        _selectedCategory.value = selectedStore.categories[0].id;
+      }
+      topStore.value = selectedStore.isTopStore;
+      editorsChoice.value = selectedStore.isEditorsChoice;
+    }
   }
 
   @override
@@ -109,41 +134,40 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Selector<CategoryViewModel, ApiResponse<List<CategoryData>>>(
-            selector: (_, viewModel) => viewModel.categoryResponse,
-            builder: (context, categoryResponse, child) {
-              return StoreFormFields(
-                nameController: nameController,
-                shortDescriptionController: shortDescriptionController,
-                longDescriptionController: longDescriptionController,
-                trackingUrlController: trackingUrlController,
-                metaTitleController: metaTitleController,
-                metaDescriptionController: metaDescriptionController,
-                metaKeywordsController: metaKeywordsController,
-                nameFocusNode: nameFocusNode,
-                shortDescriptionFocusNode: shortDescriptionFocusNode,
-                longDescriptionFocusNode: longDescriptionFocusNode,
-                trackingUrlFocusNode: trackingUrlFocusNode,
-                metaTitleFocusNode: metaTitleFocusNode,
-                metaDescriptionFocusNode: metaDescriptionFocusNode,
-                metaKeywordsFocusNode: metaKeywordsFocusNode,
-                selectedCategory: _selectedCategory,
-                onCategoryChanged: (String? newValue) {
-                  _selectedCategory.value = newValue;
+    return Consumer<StoreViewModel>(
+      builder: (context, storeViewModel, _) {
+        return Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Selector<CategoryViewModel, ApiResponse<List<CategoryData>>>(
+                selector: (_, viewModel) => viewModel.categoryResponse,
+                builder: (context, categoryResponse, child) {
+                  return StoreFormFields(
+                    nameController: nameController,
+                    shortDescriptionController: shortDescriptionController,
+                    longDescriptionController: longDescriptionController,
+                    trackingUrlController: trackingUrlController,
+                    metaTitleController: metaTitleController,
+                    metaDescriptionController: metaDescriptionController,
+                    metaKeywordsController: metaKeywordsController,
+                    nameFocusNode: nameFocusNode,
+                    shortDescriptionFocusNode: shortDescriptionFocusNode,
+                    longDescriptionFocusNode: longDescriptionFocusNode,
+                    trackingUrlFocusNode: trackingUrlFocusNode,
+                    metaTitleFocusNode: metaTitleFocusNode,
+                    metaDescriptionFocusNode: metaDescriptionFocusNode,
+                    metaKeywordsFocusNode: metaKeywordsFocusNode,
+                    selectedCategory: _selectedCategory,
+                    onCategoryChanged: (String? newValue) {
+                      _selectedCategory.value = newValue;
+                    },
+                  );
                 },
-              );
-            },
-          ),
-          const SizedBox(height: 20),
-          Selector<StoreViewModel, Data?>(
-            selector: (_, viewModel) => viewModel.selectedStore,
-            builder: (context, selectedStore, child) {
-              return StoreFormButton(
+              ),
+              const SizedBox(height: 20),
+              StoreFormButton(
                 formKey: _formKey,
                 nameController: nameController,
                 shortDescriptionController: shortDescriptionController,
@@ -156,12 +180,13 @@ class StoreFormWidgetState extends State<StoreFormWidget> {
                 topStore: topStore.value,
                 editorsChoice: editorsChoice.value,
                 language: 'English',
-                store: selectedStore,
-              );
-            },
+                store: storeViewModel
+                    .selectedStore, // Pass the current selectedStore
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

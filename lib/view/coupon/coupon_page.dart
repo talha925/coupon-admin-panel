@@ -14,7 +14,7 @@ class CreateCouponPage extends StatelessWidget {
       ),
       body: Consumer<StoreViewModel>(
         builder: (context, storeViewModel, child) {
-          if (storeViewModel.isFetching) {
+          if (storeViewModel.isFetching && storeViewModel.stores.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
 
@@ -23,7 +23,7 @@ class CreateCouponPage extends StatelessWidget {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.all(16.0),
-                  child: CouponFormWidget(), // Directly using CouponFormWidget
+                  child: CouponFormWidget(),
                 ),
               ),
               SliverToBoxAdapter(

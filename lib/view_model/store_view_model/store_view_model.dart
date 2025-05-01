@@ -53,11 +53,25 @@ class StoreViewModel with ChangeNotifier {
 
   void selectStore(Data? store) {
     _selectedStore = store;
-    if (store != null && store.heading.isNotEmpty) {
-      if (FormUtils.ALLOWED_HEADINGS.contains(store.heading)) {
-        _selectedHeading = store.heading;
+    if (store != null) {
+      _isTopStore = store.isTopStore;
+      _isEditorsChoice = store.isEditorsChoice;
+      if (store.heading.isNotEmpty) {
+        if (FormUtils.ALLOWED_HEADINGS.contains(store.heading)) {
+          _selectedHeading = store.heading;
+        }
       }
     }
+    notifyListeners();
+  }
+
+  /// Reset the selected store and form state for creating a new store
+  void resetSelectedStore() {
+    _selectedStore = null;
+    _isTopStore = false;
+    _isEditorsChoice = false;
+    _selectedHeading = FormUtils.ALLOWED_HEADINGS[0];
+    _errorMessage = null;
     notifyListeners();
   }
 
@@ -73,8 +87,6 @@ class StoreViewModel with ChangeNotifier {
   }
 
   Future<void> getStores() async {
-    if (_stores.isNotEmpty) return;
-
     _isFetching = true;
     _errorMessage = null;
     notifyListeners();

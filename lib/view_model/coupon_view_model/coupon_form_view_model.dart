@@ -50,10 +50,12 @@ class CouponFormViewModel with ChangeNotifier {
   // Form submission
   Future<void> submitForm(
       BuildContext context, CouponViewModel couponViewModel) async {
+    // Validate form first
     if (!formKey.currentState!.validate()) {
       return;
     }
 
+    // Prepare data
     final couponData = {
       "offerDetails": offerDetailsController.text,
       "code": isCodeSelected ? codeController.text : '',
@@ -63,12 +65,16 @@ class CouponFormViewModel with ChangeNotifier {
     };
 
     try {
+      // Submit the coupon - the loading state is managed in the couponViewModel
       final success = await couponViewModel.createCoupon(couponData);
+
+      // Only show feedback and clear form after operation completes
       if (success) {
         Utils.toastMessage('Coupon created successfully!');
         clearForm();
       } else {
-        Utils.toastMessage('Failed to create coupon. Please try again.');
+        Utils.toastMessage(couponViewModel.errorMessage ??
+            'Failed to create coupon. Please try again.');
       }
     } catch (e) {
       Utils.toastMessage('Error creating coupon: ${e.toString()}');
@@ -79,7 +85,7 @@ class CouponFormViewModel with ChangeNotifier {
   void clearForm() {
     codeController.clear();
     offerDetailsController.clear();
-    _selectedStoreId = null;
+    // _selectedStoreId = null;
     _isCodeSelected = false;
     _isActiveSelected = true;
     _isFeaturedForHome = false;

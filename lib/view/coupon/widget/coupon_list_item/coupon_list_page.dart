@@ -18,18 +18,38 @@ class CouponListByStorePage extends StatefulWidget {
 
 class _CouponListByStorePageState extends State<CouponListByStorePage> {
   final ValueNotifier<String?> _selectedStoreId = ValueNotifier<String?>(null);
+  bool _initialLoadDone = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final storeVM = Provider.of<StoreViewModel>(context, listen: false);
-      final couponVM = Provider.of<CouponViewModel>(context, listen: false);
+    _loadData();
+  }
 
-      storeVM.getStores(); // Fetch stores initially
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // This ensures stores are refreshed when navigating back to this page
+    if (!_initialLoadDone) {
+      _loadData();
+    }
+  }
 
-      // Ensure fetchCouponsForStore is called after store is selected
-      if (_selectedStoreId.value != null) {
+  Future<void> _loadData() async {
+    final storeVM = Provider.of<StoreViewModel>(context, listen: false);
+    final couponVM = Provider.of<CouponViewModel>(context, listen: false);
+
+    // Use addPostFrameCallback to safely call methods that trigger notifyListeners()
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Always refresh stores when the page is loaded or revisited
+      await storeVM.getStores();
+
+      // Mark that load is done
+      _initialLoadDone = true;
+
+      // If we already have a selected store, fetch its coupons
+      if (_selectedStoreId.value != null &&
+          _selectedStoreId.value!.isNotEmpty) {
         couponVM.fetchCouponsForStore(storeId: _selectedStoreId.value!);
       }
     });
@@ -42,7 +62,27 @@ class _CouponListByStorePageState extends State<CouponListByStorePage> {
 
     return SafeArea(
       child: Scaffold(
-        appBar: AppBar(title: const Text('Coupons by Store')),
+        appBar: AppBar(
+          title: const Text('Coupons by Store'),
+          actions: [
+            // Add a refresh button to manually refresh store data
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Refresh store data',
+              onPressed: () {
+                // Use post-frame callback to avoid setState during build
+                WidgetsBinding.instance.addPostFrameCallback((_) async {
+                  await storeVM.getStores();
+                  if (_selectedStoreId.value != null &&
+                      _selectedStoreId.value!.isNotEmpty) {
+                    couponVM.fetchCouponsForStore(
+                        storeId: _selectedStoreId.value!);
+                  }
+                });
+              },
+            ),
+          ],
+        ),
         body: Column(
           children: [
             Padding(
@@ -50,18 +90,32 @@ class _CouponListByStorePageState extends State<CouponListByStorePage> {
               child: StoreSearchDropdown(
                 selectedStoreId: _selectedStoreId,
                 onChanged: (storeId) {
-                  final selectedStore = storeVM.stores.firstWhere(
-                    (store) => store.id == storeId,
-                    orElse: () => storeVM.stores.first,
-                  );
-                  storeVM.selectStore(selectedStore);
-                  _selectedStoreId.value = storeId;
+                  if (storeId != null &&
+                      storeId.isNotEmpty &&
+                      storeVM.stores.isNotEmpty) {
+                    // Look for the store with the matching ID
+                    final storeIndex = storeVM.stores
+                        .indexWhere((store) => store.id == storeId);
 
-                  // Update CouponViewModel's selected store ID
-                  couponVM.updateSelectedStore(storeId); // Add this line
+                    // If found, use it; otherwise use the first store
+                    if (storeIndex >= 0) {
+                      final selectedStore = storeVM.stores[storeIndex];
+                      storeVM.selectStore(selectedStore);
+                      _selectedStoreId.value = storeId;
 
-                  if (storeId != null && storeId.isNotEmpty) {
-                    couponVM.fetchCouponsForStore(storeId: storeId);
+                      // Update CouponViewModel's selected store ID
+                      couponVM.updateSelectedStore(storeId);
+                      couponVM.fetchCouponsForStore(storeId: storeId);
+                    } else if (storeVM.stores.isNotEmpty) {
+                      // Fallback to the first store if the selected one wasn't found
+                      final selectedStore = storeVM.stores.first;
+                      storeVM.selectStore(selectedStore);
+                      _selectedStoreId.value = selectedStore.id;
+
+                      // Update CouponViewModel's selected store ID
+                      couponVM.updateSelectedStore(selectedStore.id);
+                      couponVM.fetchCouponsForStore(storeId: selectedStore.id);
+                    }
                   }
                 },
               ),
@@ -85,13 +139,20 @@ class _CouponListByStorePageState extends State<CouponListByStorePage> {
                             final coupon = couponVM.filteredCoupons[index];
                             return CouponListItem(
                               coupon: coupon,
-                              onDelete: () => couponVM.deleteCoupon(coupon.id),
+                              onDelete: () async {
+                                await couponVM.deleteCoupon(coupon.id);
+                                // Refresh coupons for current store after deletion
+                                if (_selectedStoreId.value != null) {
+                                  couponVM.fetchCouponsForStore(
+                                      storeId: _selectedStoreId.value!);
+                                }
+                              },
                               onUpdate: () {
                                 showDialog(
                                   context: context,
                                   builder: (_) => UpdateCouponDialog(
                                     coupon: coupon,
-                                    onUpdate: (updatedData) {
+                                    onUpdate: (updatedData) async {
                                       final updatedCoupon = coupon.copyWith(
                                         offerDetails:
                                             updatedData['offerDetails'],
@@ -100,22 +161,42 @@ class _CouponListByStorePageState extends State<CouponListByStorePage> {
                                         featuredForHome:
                                             updatedData['featuredForHome'],
                                       );
-                                      couponVM.updateCoupon(updatedCoupon);
+
+                                      await couponVM
+                                          .updateCoupon(updatedCoupon);
+
+                                      // Refresh coupons for current store after update
+                                      if (_selectedStoreId.value != null) {
+                                        couponVM.fetchCouponsForStore(
+                                            storeId: _selectedStoreId.value!);
+                                      }
                                     },
                                   ),
                                 );
                               },
-                              onToggleActive: () =>
-                                  couponVM.toggleCouponActiveStatus(coupon.id),
-                              onToggleFeatured: () => couponVM
-                                  .toggleCouponFeaturedStatus(coupon.id),
+                              onToggleActive: () async {
+                                await couponVM
+                                    .toggleCouponActiveStatus(coupon.id);
+                                // Refresh coupons for current store after toggling active status
+                                if (_selectedStoreId.value != null) {
+                                  couponVM.fetchCouponsForStore(
+                                      storeId: _selectedStoreId.value!);
+                                }
+                              },
+                              onToggleFeatured: () async {
+                                await couponVM
+                                    .toggleCouponFeaturedStatus(coupon.id);
+                                // Refresh coupons for current store after toggling featured status
+                                if (_selectedStoreId.value != null) {
+                                  couponVM.fetchCouponsForStore(
+                                      storeId: _selectedStoreId.value!);
+                                }
+                              },
                             );
                           },
                         ),
             ),
             // Pagination controls
-            // In CouponListByStorePage.dart
-
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

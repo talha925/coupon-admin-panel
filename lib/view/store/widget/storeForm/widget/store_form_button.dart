@@ -22,6 +22,8 @@ class StoreFormButton extends StatelessWidget {
   final bool topStore;
   final bool editorsChoice;
   final String language;
+
+  // This store parameter may cause the issue when not properly updated
   final Data? store;
 
   final ValueNotifier<bool> isSubmitting = ValueNotifier(false);
@@ -47,6 +49,10 @@ class StoreFormButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<StoreViewModel>(
       builder: (context, storeViewModel, child) {
+        // Use selectedStore from ViewModel instead of passed store property
+        final selectedStore = storeViewModel.selectedStore;
+        final isEditMode = selectedStore != null;
+
         return ValueListenableBuilder<bool>(
           valueListenable: isSubmitting,
           builder: (context, submitting, child) {
@@ -56,8 +62,7 @@ class StoreFormButton extends StatelessWidget {
                     onPressed: () async {
                       await _submitStore(context, storeViewModel);
                     },
-                    child:
-                        Text(store == null ? 'Create Store' : 'Update Store'),
+                    child: Text(isEditMode ? 'Update Store' : 'Create Store'),
                   );
           },
         );
@@ -76,13 +81,16 @@ class StoreFormButton extends StatelessWidget {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
     final imagePickerVM =
         Provider.of<ImagePickerViewModel>(context, listen: false);
-    String? uploadedImageUrl = store?.image.url;
+
+    // Get the actual selected store from ViewModel
+    final selectedStore = storeViewModel.selectedStore;
+    String? uploadedImageUrl = selectedStore?.image.url;
 
     try {
       final selectedHeading = storeViewModel.selectedHeading;
 
       // Upload image in creation case
-      if (store == null && imagePickerVM.selectedImageBytes != null) {
+      if (selectedStore == null && imagePickerVM.selectedImageBytes != null) {
         try {
           uploadedImageUrl = await imagePickerVM.uploadImageToS3();
         } catch (e) {
@@ -93,7 +101,7 @@ class StoreFormButton extends StatelessWidget {
       }
 
       // Ensure image is present on creation
-      if (store == null &&
+      if (selectedStore == null &&
           (uploadedImageUrl == null || uploadedImageUrl.isEmpty)) {
         _showError(scaffoldMessenger, 'Store image is required.');
         isSubmitting.value = false;
@@ -101,7 +109,7 @@ class StoreFormButton extends StatelessWidget {
       }
 
       final storeDataObj = Data(
-        id: store?.id ?? '',
+        id: selectedStore?.id ?? '',
         name: nameController.text.trim(),
         trackingUrl: trackingUrlController.text.trim(),
         shortDescription: shortDescriptionController.text.trim(),
@@ -128,7 +136,7 @@ class StoreFormButton extends StatelessWidget {
       scaffoldMessenger
           .showSnackBar(const SnackBar(content: Text('Saving store...')));
 
-      final success = store != null
+      final success = selectedStore != null
           ? await storeViewModel.updateStore(storeDataObj, context)
           : await storeViewModel.createStore(storeDataObj, context);
 
@@ -137,13 +145,13 @@ class StoreFormButton extends StatelessWidget {
       if (success) {
         scaffoldMessenger.showSnackBar(
           SnackBar(
-            content: Text(store != null
+            content: Text(selectedStore != null
                 ? 'Store updated successfully!'
                 : 'Store created successfully!'),
             backgroundColor: Colors.green,
           ),
         );
-        if (store == null) {
+        if (selectedStore == null) {
           _clearFormFields();
           imagePickerVM.clearImage();
         }

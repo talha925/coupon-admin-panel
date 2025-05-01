@@ -4,9 +4,28 @@ import 'package:coupon_admin_panel/res/components/components.dart';
 import 'package:coupon_admin_panel/res/theme/theme.dart';
 import 'package:coupon_admin_panel/view/store/widget/storeForm/store_form.dart';
 import 'package:coupon_admin_panel/view_model/store_view_model/store_view_model.dart';
+import 'package:coupon_admin_panel/view_model/admin_view_model.dart';
+import 'package:coupon_admin_panel/model/page_model.dart';
 
-class CreateStorePage extends StatelessWidget {
+class CreateStorePage extends StatefulWidget {
   const CreateStorePage({super.key});
+
+  @override
+  CreateStorePageState createState() => CreateStorePageState();
+}
+
+class CreateStorePageState extends State<CreateStorePage> {
+  @override
+  void initState() {
+    super.initState();
+    // Reset the selected store when this page initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        Provider.of<StoreViewModel>(context, listen: false)
+            .resetSelectedStore();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +71,8 @@ class CreateStorePage extends StatelessWidget {
                       variant: ButtonVariant.outline,
                       onPressed: () {
                         // Navigate back to store list
+                        Provider.of<AdminViewModel>(context, listen: false)
+                            .selectPage(AdminPage.allStore);
                       },
                     ),
                   ],

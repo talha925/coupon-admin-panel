@@ -173,17 +173,28 @@ class CouponViewModel with ChangeNotifier {
 
   // Create coupon
   Future<bool> createCoupon(Map<String, dynamic> couponData) async {
+    // Set loading state only once at the beginning
     _isSubmitting = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
-      await _couponRepository.createCoupon(couponData);
-      await getCoupons();
+      // Create the coupon
+      final response = await _couponRepository.createCoupon(couponData);
+
+      // Only add the new coupon to our list instead of fetching all coupons again
+      if (response != null && response['data'] != null) {
+        final newCoupon = CouponData.fromJson(response['data']);
+        _coupons.add(newCoupon);
+        _filterCoupons(); // Update filtered coupons list
+      }
+
       return true;
     } catch (e) {
       _errorMessage = 'Error creating coupon: ${e.toString()}';
       return false;
     } finally {
+      // Reset loading state
       _isSubmitting = false;
       notifyListeners();
     }

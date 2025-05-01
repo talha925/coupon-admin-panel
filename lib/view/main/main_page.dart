@@ -7,7 +7,7 @@ import 'package:coupon_admin_panel/view_model/admin_view_model.dart';
 import 'package:coupon_admin_panel/view_model/store_view_model/store_view_model.dart';
 import 'package:coupon_admin_panel/view/store/widget/storeForm/store_form.dart';
 import 'package:coupon_admin_panel/view/coupon/widget/coupon_list_item/coupon_list_page.dart';
-import 'package:coupon_admin_panel/utils/keyboard_event_handler.dart';
+import 'package:coupon_admin_panel/utils/keyboard_fix.dart';
 
 import '../category/category_screen.dart';
 import '../store/store_page.dart';
@@ -18,8 +18,8 @@ class MainPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return KeyboardEventHandlerWidget(
-      child: Scaffold(
+    return KeyboardFix().wrapWithKeyboardFix(
+      Scaffold(
         body: Row(
           children: [
             const DrawerWidget(), // Fixed Drawer on the left
@@ -27,6 +27,14 @@ class MainPage extends StatelessWidget {
               child: Selector<AdminViewModel, AdminPage>(
                 selector: (_, viewModel) => viewModel.currentPage,
                 builder: (context, currentPage, child) {
+                  // Reset selected store when navigating to Create Store page
+                  if (currentPage == AdminPage.addStore) {
+                    // Use a post-frame callback to avoid setState during build
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      Provider.of<StoreViewModel>(context, listen: false)
+                          .resetSelectedStore();
+                    });
+                  }
                   return _buildPageContent(currentPage);
                 },
               ),
